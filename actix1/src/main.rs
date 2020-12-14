@@ -1,8 +1,29 @@
-fn main() {
-    let system = actix::System::new("test");
+use actix::{Actor, Context, Running, System};
 
-    system.run();
-    // unused `std::result::Result` that must be used
-    // `#[warn(unused_must_use)]` on by default
-    // this `Result` may be an `Err` variant, which should be handledrustc(unused_must_use)
+struct MyActor;
+
+impl Actor for MyActor {
+    type Context = Context<Self>;
+
+    fn started(&mut self, _: &mut Self::Context) {
+        println!("I am alive!");
+        System::current().stop(); // <- stop system
+    }
+
+    fn stopping(&mut self, _: &mut Self::Context) -> Running {
+        println!("stopping");
+        Running::Stop
+    }
+
+    fn stopped(&mut self, _: &mut Self::Context) {
+        println!("stopped");
+    }
+}
+
+fn main() {
+    let system = System::new("test");
+
+    let _ = MyActor.start();
+
+    system.run().expect("error");
 }
