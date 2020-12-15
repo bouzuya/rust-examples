@@ -1,34 +1,68 @@
 use actix::prelude::*;
+use std::time::Duration;
 
-// this is our Message
 #[derive(Message)]
-#[rtype(result = "usize")] // we have to define the response type for `Sum` message
-struct Sum(usize, usize);
+#[rtype(result = "()")]
+struct Ping {
+    pub id: usize,
+}
 
 // Actor definition
-struct Summator;
-
-impl Actor for Summator {
-    type Context = Context<Self>;
+struct Game {
+    counter: usize,
+    name: String,
+    addr: Recipient<Ping>,
 }
 
-// now we need to define `MessageHandler` for the `Sum` message.
-impl Handler<Sum> for Summator {
-    type Result = usize; // <- Message response type
+impl Actor for Game {
+    type Context = Context<Game>;
+}
 
-    fn handle(&mut self, msg: Sum, _: &mut Context<Self>) -> Self::Result {
-        msg.0 + msg.1
+// simple message handler for Ping message
+impl Handler<Ping> for Game {
+    type Result = ();
+
+    fn handle(&mut self, msg: Ping, ctx: &mut Context<Self>) {
+        self.counter += 1;
+
+        if self.counter > 10 {
+            System::current().stop();
+        } else {
+            println!("[{0}] Ping received {1}", self.name, msg.id);
+
+            // wait 100 nanoseconds
+            ctx.run_later(Duration::new(0, 100), move |act, _| {
+                let _ = act.addr.do_send(Ping { id: msg.id + 1 });
+            });
+        }
     }
 }
 
-#[actix_rt::main] // <- starts the system and block until future resolves
-async fn main() {
-    // -> std::io::Result<()> {
-    let addr = Summator.start();
-    let res = addr.send(Sum(10, 5)).await; // <- send message and get future for result
+fn main() {
+    let system = System::new("test");
 
-    match res {
-        Ok(result) => println!("SUM: {}", result),
-        _ => println!("Communication to the actor has failed"),
-    }
+    // To get a Recipient object, we need to use a different builder method
+    // which will allow postponing actor creation
+    let _ = Game::create(|ctx| {
+        // now we can get an address of the first actor and create the second actor
+        let addr = ctx.address();
+        let addr2 = Game {
+            counter: 0,
+            name: String::from("Game 2"),
+            addr: addr.recipient(),
+        }
+        .start();
+
+        // let's start pings
+        addr2.do_send(Ping { id: 10 });
+
+        // now we can finally create first actor
+        Game {
+            counter: 0,
+            name: String::from("Game 1"),
+            addr: addr2.recipient(),
+        }
+    });
+
+    let _ = system.run();
 }
