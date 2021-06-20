@@ -1,0 +1,12 @@
+[package]
+name = "sqlx_sqlite"
+version = "0.1.0"
+authors = ["bouzuya <m@bouzuya.net>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.41"
+sqlx = { version = "0.5", features = [ "runtime-tokio-rustls", "sqlite" ] }
+tokio = { version = "1.7.1", features = ["full", "test-util"] }
