@@ -1,0 +1,49 @@
+fn main() {
+    println!("Hello, world!");
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use chrono::prelude::*;
+
+    #[test]
+    fn string_convesion_test() -> anyhow::Result<()> {
+        let f1 = |s: &str| -> anyhow::Result<String> {
+            Ok(DateTime::<FixedOffset>::from_str(s)?.to_rfc3339())
+        };
+        let f2 = |s: &str| -> anyhow::Result<String> {
+            Ok(DateTime::<FixedOffset>::from_str(s)?.to_rfc3339_opts(SecondsFormat::Secs, true))
+        };
+        let s = "2014-11-28T21:00:09+09:00";
+        assert_eq!(f1(s)?, s);
+        assert_eq!(f2(s)?, s);
+        let s = "2014-11-28T21:00:09+00:00";
+        assert_eq!(f1(s)?, s);
+        assert_eq!(f2(s)?, "2014-11-28T21:00:09Z"); // +00:00 -> Z
+        let s = "2014-11-28T21:00:09Z";
+        assert_eq!(f1(s)?, "2014-11-28T21:00:09+00:00"); // Z -> +00:00
+        assert_eq!(f2(s)?, s);
+        let s = "2014-11-28T21:00:09.123Z";
+        assert_eq!(
+            DateTime::<FixedOffset>::from_str(s)?.to_rfc3339_opts(SecondsFormat::Secs, false),
+            "2014-11-28T21:00:09+00:00"
+        );
+        assert_eq!(
+            DateTime::<FixedOffset>::from_str(s)?.to_rfc3339_opts(SecondsFormat::Millis, false),
+            "2014-11-28T21:00:09.123+00:00"
+        );
+        {
+            let dt1 = DateTime::<FixedOffset>::from_str("2014-11-28T21:00:09.123Z")?;
+            let dt2 = DateTime::<FixedOffset>::from_str("2014-11-28T21:00:09Z")?;
+            assert_ne!(dt1, dt2);
+            assert_eq!(
+                dt1.to_rfc3339_opts(SecondsFormat::Secs, true),
+                dt2.to_rfc3339_opts(SecondsFormat::Secs, true),
+            );
+            assert_eq!(dt1.with_nanosecond(0).unwrap(), dt2);
+        }
+        Ok(())
+    }
+}
