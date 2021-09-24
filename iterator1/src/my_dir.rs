@@ -38,6 +38,46 @@ impl Iterator for DirEntryIter {
     }
 }
 
+fn list_files<P: AsRef<Path>>(path: P) -> io::Result<ListFiles> {
+    Ok(ListFiles(if path.as_ref().is_dir() {
+        read_dir_sorted(path).map(|dir_entries| {
+            dir_entries
+                .into_iter()
+                .rev()
+                .map(|dir_entry| dir_entry.path())
+                .collect()
+        })?
+    } else {
+        vec![path.as_ref().to_path_buf()]
+    }))
+}
+
+struct ListFiles(Vec<PathBuf>);
+
+impl Iterator for ListFiles {
+    type Item = io::Result<PathBuf>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        while let Some(entry_path) = self.0.pop() {
+            if entry_path.is_dir() {
+                self.0.extend(match read_dir_sorted(entry_path) {
+                    Ok(dir_entries) => dir_entries
+                        .into_iter()
+                        .rev()
+                        .map(|dir_entry| dir_entry.path()),
+                    Err(err) => return Some(Err(err)),
+                });
+                continue;
+            }
+
+            if entry_path.is_file() {
+                return Some(Ok(entry_path));
+            }
+        }
+        None
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::fs;
@@ -100,6 +140,22 @@ mod tests {
                 ]
             );
         }
+        Ok(())
+    }
+
+    #[test]
+    fn my_file_iter() -> anyhow::Result<()> {
+        let tempdir = setup()?;
+        let path_bufs = list_files(tempdir.path())?.collect::<io::Result<Vec<PathBuf>>>()?;
+        assert_eq!(
+            path_bufs,
+            vec![
+                tempdir.path().join("dir1").join("file1"),
+                tempdir.path().join("dir1").join("file2"),
+                tempdir.path().join("dir2").join("file1"),
+                tempdir.path().join("dir2").join("file2"),
+            ]
+        );
         Ok(())
     }
 }
