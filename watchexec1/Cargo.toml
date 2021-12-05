@@ -1,0 +1,11 @@
+[package]
+name = "watchexec1"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.51"
+tokio = "1.14.0"
+watchexec = "1.17.1"
