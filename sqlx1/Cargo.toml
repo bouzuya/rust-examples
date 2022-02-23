@@ -1,0 +1,12 @@
+[package]
+name = "sqlx1"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.54"
+sqlx = { version = "0.5.11", features = ["any", "migrate", "runtime-tokio-rustls", "sqlite"] }
+tempfile = "3.3.0"
+tokio = { version = "1.17.0", features = ["full"] }
