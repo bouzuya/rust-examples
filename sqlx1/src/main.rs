@@ -67,6 +67,28 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn insert_test() -> anyhow::Result<()> {
+        let pool = new_pool("sqlite://:memory:").await?;
+        let mut connection = pool.acquire().await?;
+        sqlx::query("CREATE TABLE tbl1(col1 INTEGER PRIMARY KEY, col2 INTEGER, col3 INTEGER)")
+            .execute(&mut connection)
+            .await?;
+        sqlx::query("INSERT INTO tbl1(col1,col2,col3) VALUES (1, 2, 3)")
+            .execute(&mut connection)
+            .await?;
+        let row = sqlx::query("SELECT col1, col2, col3 FROM tbl1 WHERE col1 = 1")
+            .fetch_one(&mut connection)
+            .await?;
+        let col1: i64 = row.get("col1");
+        let col2: i64 = row.get("col2");
+        let col3: i64 = row.get("col3");
+        assert_eq!(col1, 1);
+        assert_eq!(col2, 2);
+        assert_eq!(col3, 3);
+        Ok(())
+    }
+
+    #[tokio::test]
     async fn custom_migration_source_test() -> anyhow::Result<()> {
         #[derive(Debug)]
         struct MyMigrationSource {}
