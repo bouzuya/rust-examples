@@ -85,6 +85,53 @@ mod tests {
         assert_eq!(col1, 1);
         assert_eq!(col2, 2);
         assert_eq!(col3, 3);
+
+        sqlx::query("INSERT INTO tbl1(col1,col2,col3) VALUES (2, NULL, NULL)")
+            .execute(&mut connection)
+            .await?;
+        let row = sqlx::query("SELECT col1, col2, col3 FROM tbl1 WHERE col1 = 2")
+            .fetch_one(&mut connection)
+            .await?;
+        let col1: i64 = row.get("col1");
+        let col2: i64 = row.get("col2");
+        let col3: Option<i64> = row.get("col3");
+        assert_eq!(col1, 2);
+        assert_eq!(col2, 0); // None -> 0
+        assert_eq!(col3, None);
+
+        let arg1: Option<i64> = None;
+        let arg2: Option<i64> = Some(3);
+        sqlx::query("INSERT INTO tbl1(col1,col2,col3) VALUES (3, $1, $2)")
+            .bind(arg1)
+            .bind(arg2)
+            .execute(&mut connection)
+            .await?;
+        let row = sqlx::query("SELECT col1, col2, col3 FROM tbl1 WHERE col1 = 3")
+            .fetch_one(&mut connection)
+            .await?;
+        let col1: i64 = row.get("col1");
+        let col2: Option<i64> = row.get("col2");
+        let col3: Option<i64> = row.get("col3");
+        assert_eq!(col1, 3);
+        assert_eq!(col2, None);
+        assert_eq!(col3, Some(3));
+
+        let arg1: Option<i64> = None;
+        let arg2: Option<i64> = Some(3);
+        sqlx::query("INSERT INTO tbl1(col1,col2,col3) VALUES (4, $2, $1)")
+            .bind(arg1)
+            .bind(arg2)
+            .execute(&mut connection)
+            .await?;
+        let row = sqlx::query("SELECT col1, col2, col3 FROM tbl1 WHERE col1 = 4")
+            .fetch_one(&mut connection)
+            .await?;
+        let col1: i64 = row.get("col1");
+        let col2: Option<i64> = row.get("col2");
+        let col3: Option<i64> = row.get("col3");
+        assert_eq!(col1, 4);
+        assert_eq!(col2, Some(3));
+        assert_eq!(col3, None);
         Ok(())
     }
 
