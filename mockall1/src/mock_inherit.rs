@@ -21,8 +21,8 @@ mod tests {
         }
     }
 
-    #[tokio::test]
-    async fn test() {
+    #[test]
+    fn test() {
         let mut mock = MockC::new();
         mock.expect_b().times(2).returning(|b| b);
         assert!(mock.b(true));

@@ -1,6 +1,7 @@
 mod automock_async_trait;
 mod automock_simple;
-mod inherit;
+mod mock_async_inherit;
+mod mock_inherit;
 
 fn main() {
     println!("Hello, world!");
