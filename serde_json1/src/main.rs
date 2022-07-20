@@ -1,4 +1,5 @@
 mod bool_from_01;
+mod enum1;
 
 fn main() {
     println!("Hello, world!");
