@@ -1,5 +1,6 @@
 // <https://docs.rs/strum_macros/0.24.1/strum_macros/derive.EnumCount.html>
-// EnumCount は COUNT を追加できる
+// impl strum::EnumCount for X を追加できる
+// EnumCount は COUNT という定数を持っている
 
 #[allow(dead_code)]
 #[derive(strum::EnumCount)]

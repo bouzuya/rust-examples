@@ -1,5 +1,5 @@
 // <https://docs.rs/strum_macros/0.24.1/strum_macros/derive.AsRefStr.html>
-// impl X for AsRef<str> を追加できる
+// impl std::convert::AsRef<str> for X を追加できる
 
 #[allow(dead_code)]
 #[derive(strum::AsRefStr)]
