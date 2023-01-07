@@ -56,6 +56,22 @@ enum E1 {
 // >         pascal
 // >     }
 // > }
+//
+// > Ok(match text {
+// >     "camel_case" | "PascalCase" => CaseStyle::PascalCase,
+// >     "camelCase" => CaseStyle::CamelCase,
+// >     "snake_case" | "snek_case" => CaseStyle::SnakeCase,
+// >     "kebab_case" | "kebab-case" => CaseStyle::KebabCase,
+// >     "SCREAMING-KEBAB-CASE" => CaseStyle::ScreamingKebabCase,
+// >     "shouty_snake_case" | "shouty_snek_case" | "SCREAMING_SNAKE_CASE" => {
+// >         CaseStyle::ShoutySnakeCase
+// >     }
+// >     "title_case" => CaseStyle::TitleCase,
+// >     "mixed_case" => CaseStyle::MixedCase,
+// >     "lowercase" => CaseStyle::LowerCase,
+// >     "UPPERCASE" => CaseStyle::UpperCase,
+// >     _ => return Err(()),
+// > })
 
 #[allow(dead_code)]
 #[derive(strum::Display)]
@@ -69,6 +85,13 @@ enum E2 {
 #[strum(serialize_all = "shouty_snake_case")]
 enum E3 {
     ShoutySnakeCase,
+}
+
+#[allow(dead_code)]
+#[derive(strum::Display)]
+#[strum(serialize_all = "camel_case")]
+enum E4 {
+    CamelCase,
 }
 
 #[cfg(test)]
@@ -97,5 +120,12 @@ mod tests {
     #[test]
     fn e3_test() {
         assert_eq!(E3::ShoutySnakeCase.to_string(), "SHOUTY_SNAKE_CASE");
+    }
+
+    #[test]
+    fn e4_test() {
+        // `serialize_all = "camel_case"` -> PascalCase
+        // <https://github.com/Peternator7/strum/pull/250>
+        assert_eq!(E4::CamelCase.to_string(), "CamelCase");
     }
 }
