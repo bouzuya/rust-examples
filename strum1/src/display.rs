@@ -1,6 +1,8 @@
 // <https://docs.rs/strum_macros/0.24.1/strum_macros/derive.Display.html>
 // impl std::fmt::Display for X を追加できる
 
+// <https://github.com/serde-rs/serde/blob/ce0844b9ecc32377b5e4545d759d385a8c46bc6a/serde_derive/src/internals/case.rs#L38-L47>
+
 #[allow(dead_code)]
 #[derive(strum::Display)]
 enum E1 {
@@ -82,16 +84,58 @@ enum E2 {
 
 #[allow(dead_code)]
 #[derive(strum::Display)]
-#[strum(serialize_all = "shouty_snake_case")]
+#[strum(serialize_all = "SCREAMING_SNAKE_CASE")]
 enum E3 {
-    ShoutySnakeCase,
+    ScreamingSnakeCase,
 }
 
 #[allow(dead_code)]
 #[derive(strum::Display)]
 #[strum(serialize_all = "camel_case")]
 enum E4 {
+    CamelCaseBug,
+}
+
+#[allow(dead_code)]
+#[derive(strum::Display)]
+#[strum(serialize_all = "camelCase")]
+enum E5 {
     CamelCase,
+}
+
+#[allow(dead_code)]
+#[derive(strum::Display)]
+#[strum(serialize_all = "kebab-case")]
+enum E6 {
+    KebabCase,
+}
+
+#[allow(dead_code)]
+#[derive(strum::Display)]
+#[strum(serialize_all = "SCREAMING-KEBAB-CASE")]
+enum E7 {
+    ScreamingKebabCase,
+}
+
+#[allow(dead_code)]
+#[derive(strum::Display)]
+#[strum(serialize_all = "PascalCase")]
+enum E8 {
+    PascalCase,
+}
+
+#[allow(dead_code)]
+#[derive(strum::Display)]
+#[strum(serialize_all = "lowercase")]
+enum E9 {
+    LowerCase,
+}
+
+#[allow(dead_code)]
+#[derive(strum::Display)]
+#[strum(serialize_all = "UPPERCASE")]
+enum E10 {
+    UpperCase,
 }
 
 #[cfg(test)]
@@ -119,13 +163,43 @@ mod tests {
 
     #[test]
     fn e3_test() {
-        assert_eq!(E3::ShoutySnakeCase.to_string(), "SHOUTY_SNAKE_CASE");
+        assert_eq!(E3::ScreamingSnakeCase.to_string(), "SCREAMING_SNAKE_CASE");
     }
 
     #[test]
     fn e4_test() {
         // `serialize_all = "camel_case"` -> PascalCase
         // <https://github.com/Peternator7/strum/pull/250>
-        assert_eq!(E4::CamelCase.to_string(), "CamelCase");
+        assert_eq!(E4::CamelCaseBug.to_string(), "CamelCaseBug");
+    }
+
+    #[test]
+    fn e5_test() {
+        assert_eq!(E5::CamelCase.to_string(), "camelCase");
+    }
+
+    #[test]
+    fn e6_test() {
+        assert_eq!(E6::KebabCase.to_string(), "kebab-case");
+    }
+
+    #[test]
+    fn e7_test() {
+        assert_eq!(E7::ScreamingKebabCase.to_string(), "SCREAMING-KEBAB-CASE");
+    }
+
+    #[test]
+    fn e8_test() {
+        assert_eq!(E8::PascalCase.to_string(), "PascalCase");
+    }
+
+    #[test]
+    fn e9_test() {
+        assert_eq!(E9::LowerCase.to_string(), "lowercase");
+    }
+
+    #[test]
+    fn e10_test() {
+        assert_eq!(E10::UpperCase.to_string(), "UPPERCASE");
     }
 }
