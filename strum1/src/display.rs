@@ -138,6 +138,17 @@ enum E10 {
     UpperCase,
 }
 
+#[allow(dead_code)]
+#[derive(strum::Display)]
+enum E11 {
+    #[strum(to_string = "to_string", serialize = "serialize")]
+    ToStringOrSerialize,
+    #[strum(serialize = "short", serialize = "loooong")]
+    UseMaxLenSerialize,
+    #[strum(serialize = "def", serialize = "abc")]
+    UseLastMultipleMaxLen,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -201,5 +212,12 @@ mod tests {
     #[test]
     fn e10_test() {
         assert_eq!(E10::UpperCase.to_string(), "UPPERCASE");
+    }
+
+    #[test]
+    fn e11_test() {
+        assert_eq!(E11::ToStringOrSerialize.to_string(), "to_string");
+        assert_eq!(E11::UseMaxLenSerialize.to_string(), "loooong");
+        assert_eq!(E11::UseLastMultipleMaxLen.to_string(), "abc");
     }
 }
