@@ -25,18 +25,11 @@ mod tests {
             Event::Decl(_) => {}
             _ => unreachable!(),
         }
-        let urlset = match reader.read_event()? {
-            Event::Start(s) => s,
-            _ => unreachable!(),
-        };
-        assert_eq!(
-            urlset.as_ref(),
-            br#"urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9""#
-        );
 
         // read url
         #[derive(Debug, Eq, PartialEq)]
         enum Context {
+            Root,
             Urlset,
             Url,
             Loc,
@@ -47,10 +40,16 @@ mod tests {
             // ...
         }
         let mut url = Url { loc: None };
-        let mut context = Context::Urlset;
+        let mut context = Context::Root;
         loop {
             match reader.read_event()? {
                 Event::Start(s) => match s.name().as_ref() {
+                    b"urlset" => {
+                        if context != Context::Root {
+                            todo!()
+                        }
+                        context = Context::Urlset;
+                    }
                     b"url" => {
                         if context != Context::Urlset {
                             todo!()
@@ -66,11 +65,21 @@ mod tests {
                     _ => unreachable!(),
                 },
                 Event::End(e) => match e.name().as_ref() {
+                    b"urlset" => {
+                        if context != Context::Urlset {
+                            todo!()
+                        }
+                        context = Context::Root;
+                    }
                     b"url" => {
                         if context != Context::Url {
                             todo!()
                         }
-                        break;
+                        context = Context::Urlset;
+                        assert_eq!(
+                            format!("{:?}", url),
+                            r#"Url { loc: Some(BytesText { content: Borrowed("http://www.example.com/") }) }"#
+                        );
                     }
                     b"loc" => {
                         if context != Context::Loc {
@@ -80,6 +89,7 @@ mod tests {
                     }
                     _ => unreachable!(),
                 },
+                Event::Eof => break,
                 Event::Text(t) => {
                     if context != Context::Loc {
                         todo!()
@@ -89,10 +99,6 @@ mod tests {
                 _ => unreachable!(),
             };
         }
-        assert_eq!(
-            format!("{:?}", url),
-            r#"Url { loc: Some(BytesText { content: Borrowed("http://www.example.com/") }) }"#
-        );
         Ok(())
     }
 
