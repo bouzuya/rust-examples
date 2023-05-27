@@ -1,14 +1,16 @@
 // <https://docs.rs/axum/0.6.18/axum/index.html#example>
 use axum::{routing::get, Router};
 
-#[tokio::main]
-async fn main() {
-    // build our application with a single route
-    let app = Router::new().route("/", get(|| async { "Hello, World!" }));
+fn build_app() -> Router {
+    Router::new().route("/", get(|| async { "Hello, World!" }))
+}
 
-    // run it with hyper on localhost:3000
-    axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    let app = build_app();
+
+    let addr = "0.0.0.0:3000".parse()?;
+    Ok(axum::Server::bind(&addr)
         .serve(app.into_make_service())
-        .await
-        .unwrap();
+        .await?)
 }
