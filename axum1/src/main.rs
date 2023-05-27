@@ -1,8 +1,10 @@
 // <https://docs.rs/axum/0.6.18/axum/index.html#example>
 // <https://docs.rs/axum/0.6.18/axum/index.html#routing>
 // <https://docs.rs/axum/0.6.18/axum/index.html#extractors>
+// <https://docs.rs/axum/0.6.18/axum/index.html#responses>
 use axum::{
-    extract::{Json, Path, Query},
+    extract::{Path, Query},
+    response::Json,
     routing::{get, post},
     Router,
 };
@@ -32,7 +34,7 @@ async fn foo_bar() {}
 //
 // 123
 // ```
-async fn path(Path(user_id): Path<u32>) -> String {
+async fn extractors_path(Path(user_id): Path<u32>) -> String {
     format!("{:?}", user_id)
 }
 
@@ -53,7 +55,7 @@ async fn path(Path(user_id): Path<u32>) -> String {
 //
 // {}
 // ```
-async fn query(Query(params): Query<HashMap<String, String>>) -> String {
+async fn extractors_query(Query(params): Query<HashMap<String, String>>) -> String {
     format!("{:?}", params)
 }
 
@@ -74,8 +76,34 @@ async fn query(Query(params): Query<HashMap<String, String>>) -> String {
 //
 // Object {"foo": String("123")}
 // ```
-async fn json(Json(payload): Json<serde_json::Value>) -> String {
+async fn extractors_json(Json(payload): Json<serde_json::Value>) -> String {
     format!("{:?}", payload)
+}
+
+// ```console
+// $ curl -D - 'http://localhost:3000/responses/plain_text'
+// HTTP/1.1 200 OK
+// content-type: text/plain; charset=utf-8
+// content-length: 3
+// date: Sat, 27 May 2023 23:50:33 GMT
+//
+// foo
+// ```
+async fn responses_plain_text() -> &'static str {
+    "foo"
+}
+
+// ```console
+// $ curl -D - 'http://localhost:3000/responses/json'
+// HTTP/1.1 200 OK
+// content-type: application/json
+// content-length: 11
+// date: Sat, 27 May 2023 23:51:15 GMT
+//
+// {"data":42}
+// ```
+async fn responses_json() -> Json<serde_json::Value> {
+    Json(serde_json::json!({ "data": 42 }))
 }
 
 fn build_app() -> Router {
@@ -83,9 +111,11 @@ fn build_app() -> Router {
         .route("/", get(root))
         .route("/foo", get(get_foo).post(post_foo))
         .route("/foo/bar", get(foo_bar))
-        .route("/extractors/path/:id", get(path))
-        .route("/extractors/query", get(query))
-        .route("/extractors/json", post(json))
+        .route("/extractors/path/:id", get(extractors_path))
+        .route("/extractors/query", get(extractors_query))
+        .route("/extractors/json", post(extractors_json))
+        .route("/responses/plain_text", get(responses_plain_text))
+        .route("/responses/json", get(responses_json))
 }
 
 #[tokio::main]
