@@ -3,12 +3,16 @@
 // <https://docs.rs/axum/0.6.18/axum/index.html#extractors>
 // <https://docs.rs/axum/0.6.18/axum/index.html#responses>
 use axum::{
-    extract::{Path, Query},
+    extract::{Path, Query, State},
+    http::StatusCode,
     response::Json,
-    routing::{get, post},
+    routing::{get, post, put},
     Router,
 };
-use std::collections::HashMap;
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
 
 async fn root() -> &'static str {
     "Hello, World!"
@@ -106,7 +110,28 @@ async fn responses_json() -> Json<serde_json::Value> {
     Json(serde_json::json!({ "data": 42 }))
 }
 
-fn build_app() -> Router {
+struct AppState {
+    counter: i32,
+}
+
+type SharedState = Arc<Mutex<AppState>>;
+
+async fn shared_state_increment_count(State(state): State<SharedState>) -> Result<(), StatusCode> {
+    let mut state = state
+        .lock()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    state.counter += 1;
+    Ok(())
+}
+
+async fn shared_state_get_count(State(state): State<SharedState>) -> Result<String, StatusCode> {
+    let state = state
+        .lock()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    Ok(state.counter.to_string())
+}
+
+fn build_app(state: SharedState) -> Router {
     Router::new()
         .route("/", get(root))
         .route("/foo", get(get_foo).post(post_foo))
@@ -116,11 +141,18 @@ fn build_app() -> Router {
         .route("/extractors/json", post(extractors_json))
         .route("/responses/plain_text", get(responses_plain_text))
         .route("/responses/json", get(responses_json))
+        .route(
+            "/shared_state/count/increment",
+            put(shared_state_increment_count),
+        )
+        .route("/shared_state/count", get(shared_state_get_count))
+        .with_state(state)
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let app = build_app();
+    let state = Arc::new(Mutex::new(AppState { counter: 0 }));
+    let app = build_app(state);
 
     let addr = "0.0.0.0:3000".parse()?;
     Ok(axum::Server::bind(&addr)
