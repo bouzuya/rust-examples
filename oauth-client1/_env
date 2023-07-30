@@ -1,0 +1,6 @@
+REQUEST_TOKEN_URL='https://...'
+USER_AUTHORIZATION_URL='https://...'
+ACCESS_TOKEN_URL='https://...'
+OAUTH_CALLBACK_URL='https://...'
+CONSUMER_KEY='...'
+CONSUMER_SECRET='...'
