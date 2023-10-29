@@ -1,0 +1,13 @@
+[package]
+name = "google-authz1"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.75"
+google-api-proto = { version = "1", features = ["google-firestore-v1"] }
+google-authz = { version = "1.0.0-alpha.5", features = ["tonic"] }
+tokio = { version = "1.33.0", features = ["full"] }
+tonic = { version = "0.10.2", features = ["tls-webpki-roots"] }
