@@ -10,6 +10,8 @@ fn main() -> anyhow::Result<()> {
     let face = OwnedFace::from_vec(buf, 0)?;
     let face = face.as_face_ref();
 
+    let pt = 16;
+
     let result = "abcあいう"
         .chars()
         .map(|c| -> anyhow::Result<_> {
@@ -19,18 +21,29 @@ fn main() -> anyhow::Result<()> {
             let hor_advance = face
                 .glyph_hor_advance(glyph_id)
                 .with_context(|| format!("char '{}' has no horizontal advance", c))?;
-            Ok((c, hor_advance))
+
+            Ok((
+                c,
+                hor_advance,
+                (hor_advance as usize * pt * 72_usize) as f64
+                    / (72_usize * face.units_per_em() as usize) as f64,
+            ))
         })
         .collect::<anyhow::Result<Vec<_>>>()?;
+
+    // <https://learn.microsoft.com/ja-jp/typography/opentype/spec/ttch01#converting-funits-to-pixels>
+    assert_eq!((550 * 18 * 72) as f64 / (72 * 2048) as f64, 4.833984375);
+
+    assert_eq!(face.units_per_em(), 1000);
     assert_eq!(
         result,
         vec![
-            ('a', 548_u16),
-            ('b', 578_u16),
-            ('c', 522_u16),
-            ('あ', 1000_u16),
-            ('い', 1000_u16),
-            ('う', 1000_u16),
+            ('a', 548, 8.768),
+            ('b', 578, 9.248),
+            ('c', 522, 8.352),
+            ('あ', 1000, 16.0),
+            ('い', 1000, 16.0),
+            ('う', 1000, 16.0),
         ]
     );
     Ok(())
