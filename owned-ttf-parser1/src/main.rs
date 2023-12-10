@@ -46,5 +46,52 @@ fn main() -> anyhow::Result<()> {
             ('う', 1000, 16.0),
         ]
     );
+
+    println!("ascender                     = {}", face.ascender());
+    println!("capital_height      (option) = {:?}", face.capital_height());
+    println!("descender                    = {}", face.descender());
+    println!(
+        "global_bounding_box (option) = {:?}",
+        face.global_bounding_box()
+    );
+    println!("height                       = {}", face.height());
+    println!("line_gap                     = {}", face.line_gap());
+
+    #[allow(unused_variables)]
+    let print_glyph_metrics = |c: char| {
+        let glyph_id = face
+            .glyph_index(c)
+            .unwrap_or_else(|| panic!("{:?} has no glyph_id", c));
+        println!("c = {:?}", c);
+        println!(
+            "glyph_hor_advance      = {:?}",
+            face.glyph_hor_advance(glyph_id)
+        );
+        println!(
+            "glyph_hor_side_bearing = {:?}",
+            face.glyph_hor_side_bearing(glyph_id)
+        );
+        println!(
+            "glyph_ver_advance      = {:?}",
+            face.glyph_ver_advance(glyph_id)
+        );
+        println!(
+            "glyph_ver_side_bearing = {:?}",
+            face.glyph_ver_side_bearing(glyph_id)
+        );
+        println!(
+            "glyph_y_origin         = {:?}",
+            face.glyph_y_origin(glyph_id)
+        );
+    };
+
+    print_glyph_metrics('a');
+    print_glyph_metrics('あ');
+
+    assert!(face.glyph_index('a').is_some());
+    assert!(face.glyph_index('あ').is_some());
+    assert!(face.glyph_index('\n').is_none());
+    assert!(face.glyph_index('\r').is_none());
+
     Ok(())
 }
