@@ -1,3 +1,5 @@
+mod wrap;
+
 use std::{fs::File, io::Read};
 
 use anyhow::Context;
@@ -86,12 +88,30 @@ fn main() -> anyhow::Result<()> {
     };
 
     print_glyph_metrics('a');
+    print_glyph_metrics('b');
+    print_glyph_metrics('c');
     print_glyph_metrics('あ');
 
     assert!(face.glyph_index('a').is_some());
     assert!(face.glyph_index('あ').is_some());
     assert!(face.glyph_index('\n').is_none());
     assert!(face.glyph_index('\r').is_none());
+    assert!(face.glyph_index(' ').is_some());
+
+    // a (0.548) + b (0.578) + c (0.522) = 1.648
+    let f = |s: &str, w: f32| -> String {
+        wrap::wrap(s, w, |c: char| -> f32 {
+            // '\n' などは glyph_id が取得できない
+            let hor_advance = face
+                .glyph_index(c)
+                .and_then(|glyph_id| face.glyph_hor_advance(glyph_id))
+                .map(usize::from)
+                .unwrap_or_default();
+            hor_advance as f32 / face.units_per_em() as f32
+        })
+    };
+    assert_eq!(f("abc", 1.648), "abc");
+    assert_eq!(f("abc", 1.647), "ab\nc");
 
     Ok(())
 }
