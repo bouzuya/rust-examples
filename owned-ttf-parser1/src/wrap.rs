@@ -15,14 +15,10 @@ pub fn wrap<F: Fn(char) -> f32>(s: &str, max_width: f32, get_width: F) -> String
                 if chars.contains(c) {
                     match t.pop() {
                         Some(pc) => {
-                            if pc == '\n' || chars.contains(pc) {
-                                t.push(pc);
-                                t.push('\n');
-                            } else {
-                                t.push('\n');
-                                t.push(pc);
-                                x = get_width(pc);
-                            }
+                            // TODO:
+                            t.push('\n');
+                            t.push(pc);
+                            x = get_width(pc);
                         }
                         None => {
                             t.push('\n');
@@ -68,6 +64,8 @@ mod tests {
         assert_eq!(wrap("ab.", 3.0, |_| 1.0), "ab.");
         assert_eq!(wrap("abc.", 3.0, |_| 1.0), "ab\nc."); // != "abc\n."
         assert_eq!(wrap("abc.def", 3.0, |_| 1.0), "ab\nc.d\nef");
+        // TODO: expected `a\nb..`
+        assert_eq!(wrap("ab..", 3.0, |_| 1.0), "ab\n..");
 
         // U+3001 '、'
         assert_eq!(wrap("abc、", 3.0, |_| 1.0), "ab\nc、");
