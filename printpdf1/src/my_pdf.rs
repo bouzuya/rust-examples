@@ -8,6 +8,12 @@ use printpdf::{
     Point,
 };
 
+#[derive(Clone, Copy, Debug)]
+pub struct Size {
+    pub height: Mm,
+    pub width: Mm,
+}
+
 pub struct MyPdfDocument {
     pdf_document_reference: PdfDocumentReference,
     pdf_page_index: PdfPageIndex,
@@ -40,23 +46,39 @@ impl MyPdfDocument {
         }
     }
 
-    pub fn add_horizontal_line<P>(&self, point: Point, len: P)
+    pub fn add_horizontal_line<P>(&self, point: Point, width: P)
     where
         P: Into<Mm>,
     {
         self.add_line(&[
             point,
-            Point::new(Mm::from(point.x) + len.into(), Mm::from(point.y)),
+            Point::new(Mm::from(point.x) + width.into(), Mm::from(point.y)),
         ]);
     }
 
-    pub fn add_vertical_line<P>(&self, point: Point, len: P)
+    pub fn add_rectangle(&self, point: Point, size: Size) {
+        let (x, y, w, h) = (
+            Mm::from(point.x),
+            Mm::from(point.y),
+            size.width,
+            size.height,
+        );
+        self.add_line(&[
+            point,
+            Point::new(x, y + h),
+            Point::new(x + w, y + h),
+            Point::new(x + w, y),
+            point,
+        ]);
+    }
+
+    pub fn add_vertical_line<P>(&self, point: Point, height: P)
     where
         P: Into<Mm>,
     {
         self.add_line(&[
             point,
-            Point::new(Mm::from(point.x), Mm::from(point.y) + len.into()),
+            Point::new(Mm::from(point.x), Mm::from(point.y) + height.into()),
         ]);
     }
 
@@ -89,6 +111,13 @@ pub fn main() -> anyhow::Result<()> {
 
     doc.add_horizontal_line(Point::new(Mm(10.0), Mm(10.0)), Mm(10.0));
     doc.add_vertical_line(Point::new(Mm(10.0), Mm(10.0)), Mm(10.0));
+    doc.add_rectangle(
+        Point::new(Mm(15.0), Mm(15.0)),
+        Size {
+            height: Mm(10.0),
+            width: Mm(10.0),
+        },
+    );
 
     let mut writer = BufWriter::new(File::create("test_working.pdf")?);
     writer.write_all(&doc.into_bytes()?)?;
