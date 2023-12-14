@@ -15,7 +15,7 @@ pub struct MyPdfDocument {
 }
 
 impl MyPdfDocument {
-    fn new<P1, P2, S1, S2>(
+    pub fn new<P1, P2, S1, S2>(
         document_title: S1,
         initial_page_width: P1,
         initial_page_height: P2,
@@ -40,32 +40,55 @@ impl MyPdfDocument {
         }
     }
 
-    pub fn f1(&self) -> anyhow::Result<()> {
-        let pdf_layer_reference = self.get_current_layer();
-        pdf_layer_reference.add_line(Line {
-            points: vec![
-                (Point::new(Mm(10.0), Mm(10.0)), false),
-                (Point::new(Mm(20.0), Mm(10.0)), false),
-            ],
-            is_closed: false,
-        });
-        Ok(())
+    pub fn add_horizontal_line<P>(&self, point: Point, len: P)
+    where
+        P: Into<Mm>,
+    {
+        self.add_line(&[
+            point,
+            Point::new(Mm::from(point.x) + len.into(), Mm::from(point.y)),
+        ]);
     }
 
-    pub fn get_current_layer(&self) -> PdfLayerReference {
-        let pdf_page_reference = self.pdf_document_reference.get_page(self.pdf_page_index);
-        pdf_page_reference.get_layer(self.pdf_layer_index)
+    pub fn add_vertical_line<P>(&self, point: Point, len: P)
+    where
+        P: Into<Mm>,
+    {
+        self.add_line(&[
+            point,
+            Point::new(Mm::from(point.x), Mm::from(point.y) + len.into()),
+        ]);
     }
 
     pub fn into_bytes(self) -> anyhow::Result<Vec<u8>> {
         Ok(self.pdf_document_reference.save_to_bytes()?)
     }
+
+    // private methods
+
+    fn add_line(&self, points: &[Point]) {
+        let layer = self.get_current_layer();
+        layer.add_line(Line {
+            points: points
+                .iter()
+                .copied()
+                .map(|point| (point, false))
+                .collect::<Vec<(Point, bool)>>(),
+            is_closed: false,
+        });
+    }
+
+    fn get_current_layer(&self) -> PdfLayerReference {
+        let pdf_page_reference = self.pdf_document_reference.get_page(self.pdf_page_index);
+        pdf_page_reference.get_layer(self.pdf_layer_index)
+    }
 }
 
 pub fn main() -> anyhow::Result<()> {
-    let doc = MyPdfDocument::new("PDF_Document_title", Mm(247.0), Mm(210.0), "Layer 1");
+    let doc = MyPdfDocument::new("PDF_Document_title", Mm(210.0), Mm(297.0), "Layer 1");
 
-    doc.f1()?;
+    doc.add_horizontal_line(Point::new(Mm(10.0), Mm(10.0)), Mm(10.0));
+    doc.add_vertical_line(Point::new(Mm(10.0), Mm(10.0)), Mm(10.0));
 
     let mut writer = BufWriter::new(File::create("test_working.pdf")?);
     writer.write_all(&doc.into_bytes()?)?;
