@@ -1,0 +1,13 @@
+services:
+  firebase:
+    build: ./firebase/
+    tty: true
+    volumes:
+      - .:/home/bouzuya/cloud-storage1
+  rust:
+    build: .
+    ports:
+      - "3000:3000"
+    tty: true
+    volumes:
+      - .:/home/bouzuya/cloud-storage1

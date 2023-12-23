@@ -1,0 +1,11 @@
+{
+  "emulators": {
+    "storage": {
+      "host": "0.0.0.0",
+      "port": 9199
+    }
+  },
+  "storage": {
+    "rules": "storage.rules"
+  }
+}

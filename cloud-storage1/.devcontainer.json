@@ -1,0 +1,15 @@
+{
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "GitHub.copilot",
+        "ms-azuretools.vscode-docker",
+        "rust-lang.rust-analyzer"
+      ]
+    }
+  },
+  "dockerComposeFile": "./compose.yaml",
+  "name": "rust",
+  "service": "rust",
+  "workspaceFolder": "/home/bouzuya/cloud-storage1"
+}
