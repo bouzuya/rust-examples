@@ -11,9 +11,4 @@ cloud-storage = { version = "0.11.1", default-features = false, features = [
 ] }
 reqwest = "0.11.23"
 tokio = { version = "1.35.1", features = ["full"] }
-
-[dev-dependencies]
-temp-env = { version = "0.3.6", features = ["async_closure"] }
-# google-api-proto = { version = "1.450.0", features = ["google-storage-v1"] }
-# google-authz = { version = "1.0.0-alpha.5", default-features = false, features = ["tonic", "webpki-roots"] }
-# tonic = { version = "0.10.2", features = ["tls-webpki-roots"] }
+uuid = { version = "1.6.1", features = ["v4"] }
