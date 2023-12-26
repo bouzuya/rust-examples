@@ -1,12 +1,8 @@
-use std::{
-    future::Future,
-    pin::Pin,
-    ptr,
-    task::{Poll, RawWaker, RawWakerVTable, Waker},
-};
+use std::{future::Future, pin::Pin, task::Poll};
 
 use google_authz::{Credentials, GoogleAuthz};
 use reqwest::Client;
+use tower::ServiceExt as _;
 use tower_service::Service as _;
 
 struct HttpClient(reqwest::Client);
@@ -68,38 +64,14 @@ async fn main() -> anyhow::Result<()> {
         .build()
         .await;
 
-    let waker = unsafe {
-        const VTABLE: RawWakerVTable = RawWakerVTable::new(
-            // Cloning just returns a new no-op raw waker
-            |_| RAW,
-            // `wake` does nothing
-            |_| {},
-            // `wake_by_ref` does nothing
-            |_| {},
-            // Dropping does nothing as we don't allocate anything
-            |_| {},
-        );
-        const RAW: RawWaker = RawWaker::new(ptr::null(), &VTABLE);
-        Waker::from_raw(RAW)
-    };
-
-    let mut x = service.poll_ready(&mut std::task::Context::from_waker(&waker));
-    loop {
-        match x {
-            Poll::Ready(Ok(())) => break,
-            Poll::Ready(Err(e)) => panic!("{:?}", e),
-            Poll::Pending => {}
-        }
-        x = service.poll_ready(&mut std::task::Context::from_waker(&waker));
-    }
-    println!("{:?}", x);
-
     // <https://developers.google.com/drive/api/reference/rest/v3/files/list?hl=ja>
     // <https://developers.google.com/drive/api/reference/rest/v3/files/get?hl=ja>
     let folder_id = "1spieLw_OMRx59B0G1SsMABC5ETKNqkqb";
     let file_id = "1DOeJ6jAlau1EgBpFRDAg1KW8Adz6-GHU";
     println!("folder_id: {}, file_id: {}", folder_id, file_id);
     let response = service
+        .ready()
+        .await?
         .call(
             http::Request::builder()
                 .method("GET")
