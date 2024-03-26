@@ -1,5 +1,57 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+#[derive(Debug, thiserror::Error)]
+enum Error {
+    #[error("FIXME: {0}")]
+    Fixme(String),
+}
+
+fn add_signed_url_required_query_string_parameters(
+    request: &mut http::Request<()>,
+    service_account_client_email: &str,
+    request_timestamp: chrono::DateTime<chrono::Utc>,
+    region: &str,
+    expiration: i64,
+) -> Result<(), Error> {
+    if !request.headers().contains_key(http::header::HOST) {
+        return Err(Error::Fixme("Host header is required".to_string()));
+    }
+    let authorizer = service_account_client_email;
+    // <https://cloud.google.com/storage/docs/authentication/signatures#credential-scope>
+    let credential_scope = {
+        let date = request_timestamp.format("%Y%m%d").to_string();
+        let location = region; // e.g. "us-central1";
+        let service = "storage";
+        let request_type = "goog4_request";
+        format!("{date}/{location}/{service}/{request_type}")
+    };
+    let x_goog_date = request_timestamp.format("%Y%m%dT%H%M%SZ").to_string();
+    let mut url1 = url::Url::parse(request.uri().to_string().as_str()).expect("uri to be valid");
+    url1.query_pairs_mut()
+        .append_pair("X-Goog-Algorithm", "GOOG4-RSA-SHA256")
+        .append_pair(
+            "X-Goog-Credential",
+            format!("{authorizer}/{credential_scope}").as_str(),
+        )
+        .append_pair("X-Goog-Date", x_goog_date.as_str())
+        .append_pair("X-Goog-Expires", expiration.to_string().as_str())
+        .append_pair(
+            "X-Goog-SignedHeaders",
+            request
+                .headers()
+                .keys()
+                .map(|k| k.to_string().to_ascii_lowercase())
+                .collect::<BTreeSet<String>>()
+                .into_iter()
+                .collect::<Vec<String>>()
+                .join(";")
+                .as_str(),
+        )
+        .finish();
+    *request.uri_mut() = http::Uri::try_from(url1.to_string()).expect("url to be valid");
+    Ok(())
+}
+
 // <https://cloud.google.com/storage/docs/authentication/canonical-requests>
 fn canonical_request(request: http::Request<()>) -> String {
     let http_verb = request.method().to_string();
@@ -83,6 +135,36 @@ mod tests {
     use std::collections::{BTreeMap, BTreeSet};
 
     use super::*;
+
+    #[test]
+    fn test_add_signed_url_required_query_string_parameters() -> anyhow::Result<()> {
+        // TODO: host header is required
+
+        let date_time =
+            chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339("2020-01-02T03:04:05Z")?
+                .naive_utc()
+                .and_utc();
+        let expiration = 604800;
+        let service_account_name = "service_account_name1";
+        let mut request = http::Request::builder()
+            .header("Host", "storage.googleapis.com")
+            .header("Content-Type", "text/plain")
+            .header("x-goog-meta-reviewer", "jane")
+            .header("x-goog-meta-reviewer", "john")
+            .method(http::Method::POST)
+            .uri("https://storage.googleapis.com/example-bucket/cat-pics/tabby.jpeg?generation=1360887697105000&userProject=my-project")
+            .body(())?;
+        add_signed_url_required_query_string_parameters(
+            &mut request,
+            service_account_name,
+            date_time,
+            "us-central1",
+            expiration,
+        )?;
+        let s = canonical_request(request);
+        assert!(s.contains("X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=service_account_name1/20200102/us-central1/storage/goog4_request&X-Goog-Date=20200102T030405Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=content-type%3Bhost%3Bx-goog-meta-reviewer&generation=1360887697105000&userProject=my-project"));
+        Ok(())
+    }
 
     #[test]
     fn test_canonical_request() -> anyhow::Result<()> {
@@ -215,6 +297,17 @@ UNSIGNED-PAYLOAD
         let payload = "UNSIGNED-PAYLOAD";
         assert_eq!(payload, "UNSIGNED-PAYLOAD");
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_request_header() -> anyhow::Result<()> {
+        let request = http::Request::builder()
+            .header("Content-Type", "text/plain")
+            .body(())?;
+        assert!(request.headers().contains_key("Content-Type"));
+        assert!(request.headers().contains_key("content-type"));
+        assert!(request.headers().contains_key(http::header::CONTENT_TYPE));
         Ok(())
     }
 

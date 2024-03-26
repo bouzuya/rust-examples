@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 chrono = "0.4.35"
 http = "1.1.0"
+thiserror = "1.0.58"
 url = "2.5.0"
 
 [dev-dependencies]
