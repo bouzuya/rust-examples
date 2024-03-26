@@ -7,6 +7,8 @@ edition = "2021"
 
 [dependencies]
 chrono = "0.4.35"
+http = "1.1.0"
+url = "2.5.0"
 
 [dev-dependencies]
 anyhow = "1.0.81"
