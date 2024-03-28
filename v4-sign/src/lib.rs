@@ -1,4 +1,7 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    vec,
+};
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -6,25 +9,48 @@ enum Error {
     Fixme(String),
 }
 
+// <https://cloud.google.com/storage/docs/authentication/signatures#string-to-sign>
+fn construct_string_to_sign(
+    request_timestamp: chrono::DateTime<chrono::Utc>,
+    region: &str,
+    canonical_request: &str,
+) -> String {
+    let signing_algorithm = "GOOG4-RSA-SHA256";
+    let active_datetime = request_timestamp.format("%Y%m%dT%H%M%SZ").to_string();
+    let credential_scope = construct_credential_scope(request_timestamp, region);
+    let hashed_canonical_request = sha256::digest(canonical_request);
+    [
+        signing_algorithm,
+        active_datetime.as_str(),
+        credential_scope.as_str(),
+        hashed_canonical_request.as_str(),
+    ]
+    .join("\n")
+}
+
+// <https://cloud.google.com/storage/docs/authentication/signatures#credential-scope>
+fn construct_credential_scope(
+    request_timestamp: chrono::DateTime<chrono::Utc>,
+    region: &str,
+) -> String {
+    let date = request_timestamp.format("%Y%m%d").to_string();
+    let location = region; // e.g. "us-central1";
+    let service = "storage";
+    let request_type = "goog4_request";
+    format!("{date}/{location}/{service}/{request_type}")
+}
+
 fn add_signed_url_required_query_string_parameters(
     request: &mut http::Request<()>,
     service_account_client_email: &str,
     request_timestamp: chrono::DateTime<chrono::Utc>,
-    region: &str,
+    credential_scope: &str,
     expiration: i64,
 ) -> Result<(), Error> {
     if !request.headers().contains_key(http::header::HOST) {
         return Err(Error::Fixme("Host header is required".to_string()));
     }
     let authorizer = service_account_client_email;
-    // <https://cloud.google.com/storage/docs/authentication/signatures#credential-scope>
-    let credential_scope = {
-        let date = request_timestamp.format("%Y%m%d").to_string();
-        let location = region; // e.g. "us-central1";
-        let service = "storage";
-        let request_type = "goog4_request";
-        format!("{date}/{location}/{service}/{request_type}")
-    };
     let x_goog_date = request_timestamp.format("%Y%m%dT%H%M%SZ").to_string();
     let mut url1 = url::Url::parse(request.uri().to_string().as_str()).expect("uri to be valid");
     url1.query_pairs_mut()
@@ -52,8 +78,18 @@ fn add_signed_url_required_query_string_parameters(
     Ok(())
 }
 
+fn canonical_query_string(request: &http::Request<()>) -> String {
+    let mut query_pairs = url::Url::parse(request.uri().to_string().as_str())
+        .expect("uri to be valid")
+        .query_pairs()
+        .map(|(k, v)| format!("{}={}", percent_encode(&k), percent_encode(&v)))
+        .collect::<Vec<String>>();
+    query_pairs.sort();
+    query_pairs.join("&")
+}
+
 // <https://cloud.google.com/storage/docs/authentication/canonical-requests>
-fn canonical_request(request: http::Request<()>) -> String {
+fn canonical_request(request: &http::Request<()>) -> String {
     let http_verb = request.method().to_string();
     let path_to_resource = percent_encode(request.uri().path());
     let signed_headers = request
@@ -64,15 +100,7 @@ fn canonical_request(request: http::Request<()>) -> String {
         .into_iter()
         .collect::<Vec<String>>()
         .join(";");
-    let canonical_query_string = {
-        let mut query_pairs = url::Url::parse(request.uri().to_string().as_str())
-            .expect("uri to be valid")
-            .query_pairs()
-            .map(|(k, v)| format!("{}={}", percent_encode(&k), percent_encode(&v)))
-            .collect::<Vec<String>>();
-        query_pairs.sort();
-        query_pairs.join("&")
-    };
+    let canonical_query_string = canonical_query_string(&request);
     let canonical_headers = {
         let mut canonical_headers = BTreeMap::new();
         for (name, value) in request.headers() {
@@ -99,6 +127,46 @@ fn canonical_request(request: http::Request<()>) -> String {
         payload,
     ]
     .join("\n")
+}
+
+fn sign(
+    date_time: chrono::DateTime<chrono::Utc>,
+    region: &str,
+    expiration: i64,
+    service_account_client_email: &str,
+    service_account_private_key: &str,
+    mut request: http::Request<()>,
+) -> Result<String, Error> {
+    let credential_scope = construct_credential_scope(date_time, region);
+    add_signed_url_required_query_string_parameters(
+        &mut request,
+        service_account_client_email,
+        date_time,
+        credential_scope.as_str(),
+        expiration,
+    )?;
+    let canonical_query_string = canonical_query_string(&request);
+    let canonical_request = canonical_request(&request);
+    let string_to_sign = construct_string_to_sign(date_time, region, canonical_request.as_str());
+    let request_signature = {
+        let pkcs8 = pem::parse(service_account_private_key.as_bytes()).unwrap();
+        let key_pair =
+            ring::signature::RsaKeyPair::from_pkcs8(pkcs8.contents()).expect("key to be valid");
+        let mut signature = vec![0; key_pair.public().modulus_len()];
+        key_pair
+            .sign(
+                &ring::signature::RSA_PKCS1_SHA256,
+                &ring::rand::SystemRandom::new(),
+                string_to_sign.as_bytes(),
+                &mut signature,
+            )
+            .unwrap();
+        sha256::digest(&signature)
+    };
+
+    let hostname = "https://storage.googleapis.com";
+    let path_to_resource = request.uri().path();
+    Ok(format!("{hostname}{path_to_resource}?{canonical_query_string}&X-Goog-Signature={request_signature}"))
 }
 
 // ?=!#$&'()*+,:;@[]"
@@ -137,6 +205,11 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_string_to_sign() {
+        // TODO:
+    }
+
+    #[test]
     fn test_add_signed_url_required_query_string_parameters() -> anyhow::Result<()> {
         // TODO: host header is required
 
@@ -154,14 +227,15 @@ mod tests {
             .method(http::Method::POST)
             .uri("https://storage.googleapis.com/example-bucket/cat-pics/tabby.jpeg?generation=1360887697105000&userProject=my-project")
             .body(())?;
+        let credential_scope = construct_credential_scope(date_time, "us-central1");
         add_signed_url_required_query_string_parameters(
             &mut request,
             service_account_name,
             date_time,
-            "us-central1",
+            credential_scope.as_str(),
             expiration,
         )?;
-        let s = canonical_request(request);
+        let s = canonical_request(&request);
         assert!(s.contains("X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=service_account_name1/20200102/us-central1/storage/goog4_request&X-Goog-Date=20200102T030405Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=content-type%3Bhost%3Bx-goog-meta-reviewer&generation=1360887697105000&userProject=my-project"));
         Ok(())
     }
@@ -177,7 +251,7 @@ mod tests {
             .uri("https://storage.googleapis.com/example-bucket/cat-pics/tabby.jpeg?generation=1360887697105000&userProject=my-project")
             .body(())?;
         assert_eq!(
-            canonical_request(request),
+            canonical_request(&request),
             r#"
 POST
 /example-bucket/cat-pics/tabby.jpeg
