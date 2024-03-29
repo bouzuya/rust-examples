@@ -172,7 +172,16 @@ fn sign(
 
     let hostname = "https://storage.googleapis.com";
     let path_to_resource = request.uri().path();
-    Ok(format!("{hostname}{path_to_resource}?{canonical_query_string}&X-Goog-Signature={request_signature}"))
+    let signed_url = [
+        hostname,
+        path_to_resource,
+        "?",
+        canonical_query_string.as_str(),
+        "&X-Goog-Signature=",
+        request_signature.as_str(),
+    ]
+    .join("");
+    Ok(signed_url)
 }
 
 // ?=!#$&'()*+,:;@[]"
@@ -409,6 +418,66 @@ UNSIGNED-PAYLOAD
         let x_goog_date = date_time.format("%Y%m%dT%H%M%SZ").to_string();
         assert_eq!(date, "20200102");
         assert_eq!(x_goog_date, "20200102T030405Z");
+        Ok(())
+    }
+
+    #[ignore]
+    #[tokio::test]
+    async fn test_sign() -> anyhow::Result<()> {
+        use anyhow::Context as _;
+        let bucket_name = std::env::var("BUCKET_NAME")?;
+        let google_application_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?;
+        let object_name = std::env::var("OBJECT_NAME")?;
+        let region = std::env::var("REGION")?;
+
+        let date_time = chrono::Utc::now();
+        let expiration = 604800;
+        let (service_account_client_email, service_account_private_key) = {
+            let path = google_application_credentials;
+            let path = std::path::Path::new(path.as_str());
+            let mut file = std::fs::File::open(path)?;
+            let mut s = String::new();
+            std::io::Read::read_to_string(&mut file, &mut s)?;
+            let json_value: serde_json::Value = serde_json::from_str(s.as_str())?;
+            let json_object = json_value.as_object().context("json root is not object")?;
+            let client_email = json_object
+                .get("client_email")
+                .context("client_email is not found")?
+                .as_str()
+                .context("client_email is not string")?
+                .to_string();
+            let private_key = json_object
+                .get("private_key")
+                .context("private_key is not found")?
+                .as_str()
+                .context("private_key is not string")?
+                .to_string();
+            Result::<_, anyhow::Error>::Ok((client_email, private_key))
+        }?;
+        let request = http::Request::builder()
+            .header("Host", "storage.googleapis.com")
+            .method(http::Method::GET)
+            .uri(
+                format!(
+                    "https://storage.googleapis.com/{}{}",
+                    bucket_name, object_name
+                )
+                .as_str(),
+            )
+            .body(())?;
+        let signed_url = sign(
+            date_time,
+            &region,
+            expiration,
+            &service_account_client_email,
+            &service_account_private_key,
+            request,
+        )?;
+
+        let response = reqwest::get(signed_url).await?;
+        assert_eq!(response.status().as_u16(), 200);
+        assert_eq!(response.text().await?, "abc\n");
+
         Ok(())
     }
 }
