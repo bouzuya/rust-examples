@@ -161,7 +161,11 @@ fn sign(
                 &mut signature,
             )
             .unwrap();
-        sha256::digest(&signature)
+        use std::fmt::Write as _;
+        signature.into_iter().fold(String::new(), |mut s, b| {
+            let _ = write!(s, "{:02x}", b);
+            s
+        })
     };
 
     let hostname = "https://storage.googleapis.com";
