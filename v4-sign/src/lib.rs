@@ -57,7 +57,9 @@ fn add_signed_url_required_query_string_parameters(
         .append_pair("X-Goog-Algorithm", "GOOG4-RSA-SHA256")
         .append_pair(
             "X-Goog-Credential",
-            format!("{authorizer}/{credential_scope}").as_str(),
+            format!("{authorizer}/{credential_scope}")
+                .replace('/', "%2F")
+                .as_str(),
         )
         .append_pair("X-Goog-Date", x_goog_date.as_str())
         .append_pair("X-Goog-Expires", expiration.to_string().as_str())
