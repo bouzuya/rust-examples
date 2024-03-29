@@ -1,7 +1,11 @@
+mod signing_algorithm;
+
 use std::{
     collections::{BTreeMap, BTreeSet},
     vec,
 };
+
+use signing_algorithm::SigningAlgorithm;
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -15,12 +19,12 @@ fn construct_string_to_sign(
     region: &str,
     canonical_request: &str,
 ) -> String {
-    let signing_algorithm = "GOOG4-RSA-SHA256";
+    let signing_algorithm = SigningAlgorithm::Goog4RsaSha256;
     let active_datetime = request_timestamp.format("%Y%m%dT%H%M%SZ").to_string();
     let credential_scope = construct_credential_scope(request_timestamp, region);
     let hashed_canonical_request = sha256::digest(canonical_request);
     [
-        signing_algorithm,
+        signing_algorithm.as_str(),
         active_datetime.as_str(),
         credential_scope.as_str(),
         hashed_canonical_request.as_str(),
@@ -54,7 +58,10 @@ fn add_signed_url_required_query_string_parameters(
     let x_goog_date = request_timestamp.format("%Y%m%dT%H%M%SZ").to_string();
     let mut url1 = url::Url::parse(request.uri().to_string().as_str()).expect("uri to be valid");
     url1.query_pairs_mut()
-        .append_pair("X-Goog-Algorithm", "GOOG4-RSA-SHA256")
+        .append_pair(
+            "X-Goog-Algorithm",
+            SigningAlgorithm::Goog4RsaSha256.as_str(),
+        )
         .append_pair(
             "X-Goog-Credential",
             format!("{authorizer}/{credential_scope}")
@@ -343,7 +350,10 @@ UNSIGNED-PAYLOAD
             let mut url1 = url::Url::parse(request.uri().to_string().as_str())?;
             let url_required_query_string_parameters_sadded = url1
                 .query_pairs_mut()
-                .append_pair("X-Goog-Algorithm", "GOOG4-RSA-SHA256")
+                .append_pair(
+                    "X-Goog-Algorithm",
+                    SigningAlgorithm::Goog4RsaSha256.as_str(),
+                )
                 .append_pair(
                     "X-Goog-Credential",
                     format!("{authorizer}/{credential_scope}").as_str(),
