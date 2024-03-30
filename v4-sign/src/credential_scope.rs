@@ -1,6 +1,7 @@
 use crate::{date::Date, location::Location, request_type::RequestType, service::Service};
 
 // <https://cloud.google.com/storage/docs/authentication/signatures#credential-scope>
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct CredentialScope {
     date: Date,
     location: Location,
@@ -43,6 +44,9 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
+        fn assert_impls<T: Clone + std::fmt::Debug + Eq + PartialEq>() {}
+        assert_impls::<CredentialScope>();
+
         let chrono_date_time = chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339(
             "2020-01-02T03:04:05+00:00",
         )?
