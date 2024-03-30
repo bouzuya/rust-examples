@@ -1,3 +1,4 @@
+mod request_type;
 mod signing_algorithm;
 
 use std::{
@@ -5,6 +6,7 @@ use std::{
     vec,
 };
 
+use request_type::RequestType;
 use signing_algorithm::SigningAlgorithm;
 
 #[derive(Debug, thiserror::Error)]
@@ -40,7 +42,7 @@ fn construct_credential_scope(
     let date = request_timestamp.format("%Y%m%d").to_string();
     let location = region; // e.g. "us-central1";
     let service = "storage";
-    let request_type = "goog4_request";
+    let request_type = RequestType::Goog4Request.as_str();
     format!("{date}/{location}/{service}/{request_type}")
 }
 
@@ -343,7 +345,7 @@ UNSIGNED-PAYLOAD
                 let date = date_time.format("%Y%m%d").to_string();
                 let location = "us-central1";
                 let service = "storage";
-                let request_type = "goog4_request";
+                let request_type = RequestType::Goog4Request.as_str();
                 format!("{date}/{location}/{service}/{request_type}")
             };
             let x_goog_date = date_time.format("%Y%m%dT%H%M%SZ").to_string();
