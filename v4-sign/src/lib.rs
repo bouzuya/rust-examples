@@ -13,6 +13,7 @@ use std::{collections::BTreeSet, vec};
 use active_datetime::ActiveDatetime;
 use canonical_request::{canonical_query_string, CanonicalRequest};
 use credential_scope::CredentialScope;
+use date::Date;
 use location::Location;
 use request_type::RequestType;
 use signing_algorithm::SigningAlgorithm;
@@ -29,17 +30,14 @@ enum Error {
 fn add_signed_url_required_query_string_parameters(
     request: &mut http::Request<()>,
     service_account_client_email: &str,
-    request_timestamp: chrono::DateTime<chrono::Utc>,
-    credential_scope: &str,
+    x_goog_date: ActiveDatetime,
+    credential_scope: &CredentialScope,
     expiration: i64,
 ) -> Result<(), Error> {
     if !request.headers().contains_key(http::header::HOST) {
         return Err(Error::Fixme("Host header is required".to_string()));
     }
     let authorizer = service_account_client_email;
-    let x_goog_date = ActiveDatetime::try_from(request_timestamp)
-        .unwrap()
-        .to_string();
     let mut url1 = url::Url::parse(request.uri().to_string().as_str()).expect("uri to be valid");
     url1.query_pairs_mut()
         .append_pair(
@@ -52,7 +50,7 @@ fn add_signed_url_required_query_string_parameters(
                 .replace('/', "%2F")
                 .as_str(),
         )
-        .append_pair("X-Goog-Date", x_goog_date.as_str())
+        .append_pair("X-Goog-Date", x_goog_date.to_string().as_str())
         .append_pair("X-Goog-Expires", expiration.to_string().as_str())
         .append_pair(
             "X-Goog-SignedHeaders",
@@ -72,16 +70,16 @@ fn add_signed_url_required_query_string_parameters(
 }
 
 fn sign(
-    date_time: chrono::DateTime<chrono::Utc>,
-    region: &str,
+    active_datetime: ActiveDatetime,
+    location: Location,
     expiration: i64,
     service_account_client_email: &str,
     service_account_private_key: &str,
     mut request: http::Request<()>,
 ) -> Result<String, Error> {
-    let location = Location::try_from(region).expect("region to be valid location");
     let credential_scope = CredentialScope::new(
-        date::Date::try_from(date_time).expect("date_time to be in a valid range"),
+        Date::from_unix_timestamp(active_datetime.unix_timestamp())
+            .expect("active_datetime.unix_timestamp to be valid date"),
         location,
         Service::Storage,
         RequestType::Goog4Request,
@@ -89,14 +87,14 @@ fn sign(
     add_signed_url_required_query_string_parameters(
         &mut request,
         service_account_client_email,
-        date_time,
-        credential_scope.to_string().as_str(),
+        active_datetime,
+        &credential_scope,
         expiration,
     )?;
     let canonical_query_string = canonical_query_string(&request);
     let string_to_sign = StringToSign::new(
         SigningAlgorithm::Goog4RsaSha256,
-        ActiveDatetime::try_from(date_time).expect("date_time to be in a valid range"),
+        active_datetime,
         credential_scope,
         CanonicalRequest::new(&request),
     );
@@ -136,24 +134,20 @@ fn sign(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::date::Date;
 
-    #[test]
-    fn test_string_to_sign() {
-        // TODO:
-    }
+    use super::*;
 
     #[test]
     fn test_add_signed_url_required_query_string_parameters() -> anyhow::Result<()> {
         // TODO: host header is required
 
-        let date_time =
+        let chrono_date_time =
             chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339("2020-01-02T03:04:05Z")?
                 .naive_utc()
                 .and_utc();
-        let date = date::Date::try_from(date_time)?;
         let expiration = 604800;
-        let service_account_name = "service_account_name1";
+        let service_account_client_email = "service_account_name1";
         let mut request = http::Request::builder()
             .header("Host", "storage.googleapis.com")
             .header("Content-Type", "text/plain")
@@ -162,15 +156,16 @@ mod tests {
             .method(http::Method::POST)
             .uri("https://storage.googleapis.com/example-bucket/cat-pics/tabby.jpeg?generation=1360887697105000&userProject=my-project")
             .body(())?;
-        let location = Location::try_from("us-central1")?;
-        let credential_scope =
-            CredentialScope::new(date, location, Service::Storage, RequestType::Goog4Request)
-                .to_string();
         add_signed_url_required_query_string_parameters(
             &mut request,
-            service_account_name,
-            date_time,
-            credential_scope.as_str(),
+            service_account_client_email,
+            ActiveDatetime::try_from(chrono_date_time)?,
+            &CredentialScope::new(
+                Date::try_from(chrono_date_time)?,
+                Location::try_from("us-central1")?,
+                Service::Storage,
+                RequestType::Goog4Request,
+            ),
             expiration,
         )?;
         let s = CanonicalRequest::new(&request).to_string();
@@ -191,12 +186,12 @@ mod tests {
 
     #[test]
     fn test_chrono() -> anyhow::Result<()> {
-        let date_time =
+        let chrono_date_time =
             chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339("2020-01-02T03:04:05Z")?
                 .naive_utc()
                 .and_utc();
-        let date = date_time.format("%Y%m%d").to_string();
-        let x_goog_date = date_time.format("%Y%m%dT%H%M%SZ").to_string();
+        let date = chrono_date_time.format("%Y%m%d").to_string();
+        let x_goog_date = chrono_date_time.format("%Y%m%dT%H%M%SZ").to_string();
         assert_eq!(date, "20200102");
         assert_eq!(x_goog_date, "20200102T030405Z");
         Ok(())
@@ -211,7 +206,8 @@ mod tests {
         let object_name = std::env::var("OBJECT_NAME")?;
         let region = std::env::var("REGION")?;
 
-        let date_time = chrono::Utc::now();
+        let active_datetime = ActiveDatetime::now();
+        let location = Location::try_from(region.as_str())?;
         let expiration = 604800;
         let (service_account_client_email, service_account_private_key) = {
             let path = google_application_credentials;
@@ -247,8 +243,8 @@ mod tests {
             )
             .body(())?;
         let signed_url = sign(
-            date_time,
-            &region,
+            active_datetime,
+            location,
             expiration,
             &service_account_client_email,
             &service_account_private_key,
