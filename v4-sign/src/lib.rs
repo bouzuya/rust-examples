@@ -1,4 +1,5 @@
 mod request_type;
+mod service;
 mod signing_algorithm;
 
 use std::{
@@ -8,6 +9,8 @@ use std::{
 
 use request_type::RequestType;
 use signing_algorithm::SigningAlgorithm;
+
+use crate::service::Service;
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
@@ -41,7 +44,7 @@ fn construct_credential_scope(
 ) -> String {
     let date = request_timestamp.format("%Y%m%d").to_string();
     let location = region; // e.g. "us-central1";
-    let service = "storage";
+    let service = Service::Storage.as_str();
     let request_type = RequestType::Goog4Request.as_str();
     format!("{date}/{location}/{service}/{request_type}")
 }
@@ -344,7 +347,7 @@ UNSIGNED-PAYLOAD
             let credential_scope = {
                 let date = date_time.format("%Y%m%d").to_string();
                 let location = "us-central1";
-                let service = "storage";
+                let service = Service::Storage.as_str();
                 let request_type = RequestType::Goog4Request.as_str();
                 format!("{date}/{location}/{service}/{request_type}")
             };
