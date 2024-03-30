@@ -6,6 +6,7 @@ mod location;
 mod request_type;
 mod service;
 mod signing_algorithm;
+mod string_to_sign;
 
 use std::{collections::BTreeSet, vec};
 
@@ -15,6 +16,7 @@ use credential_scope::CredentialScope;
 use location::Location;
 use request_type::RequestType;
 use signing_algorithm::SigningAlgorithm;
+use string_to_sign::StringToSign;
 
 use crate::service::Service;
 
@@ -22,33 +24,6 @@ use crate::service::Service;
 enum Error {
     #[error("FIXME: {0}")]
     Fixme(String),
-}
-
-// <https://cloud.google.com/storage/docs/authentication/signatures#string-to-sign>
-fn construct_string_to_sign(
-    request_timestamp: chrono::DateTime<chrono::Utc>,
-    region: &str,
-    canonical_request: CanonicalRequest,
-) -> String {
-    let signing_algorithm = SigningAlgorithm::Goog4RsaSha256;
-    let active_datetime = ActiveDatetime::try_from(request_timestamp)
-        .expect("request_timestamp to be in a valid range")
-        .to_string();
-    let credential_scope = CredentialScope::new(
-        date::Date::try_from(request_timestamp).expect("request_timestamp to be in a valid range"),
-        Location::try_from(region).expect("region to be valid location"),
-        Service::Storage,
-        RequestType::Goog4Request,
-    )
-    .to_string();
-    let hashed_canonical_request = sha256::digest(canonical_request.to_string());
-    [
-        signing_algorithm.as_str(),
-        active_datetime.as_str(),
-        credential_scope.as_str(),
-        hashed_canonical_request.as_str(),
-    ]
-    .join("\n")
 }
 
 fn add_signed_url_required_query_string_parameters(
@@ -110,18 +85,21 @@ fn sign(
         location,
         Service::Storage,
         RequestType::Goog4Request,
-    )
-    .to_string();
+    );
     add_signed_url_required_query_string_parameters(
         &mut request,
         service_account_client_email,
         date_time,
-        credential_scope.as_str(),
+        credential_scope.to_string().as_str(),
         expiration,
     )?;
     let canonical_query_string = canonical_query_string(&request);
-    let canonical_request = CanonicalRequest::new(&request);
-    let string_to_sign = construct_string_to_sign(date_time, region, canonical_request);
+    let string_to_sign = StringToSign::new(
+        SigningAlgorithm::Goog4RsaSha256,
+        ActiveDatetime::try_from(date_time).expect("date_time to be in a valid range"),
+        credential_scope,
+        CanonicalRequest::new(&request),
+    );
     let request_signature = {
         let pkcs8 = pem::parse(service_account_private_key.as_bytes()).unwrap();
         let key_pair =
@@ -131,7 +109,7 @@ fn sign(
             .sign(
                 &ring::signature::RSA_PKCS1_SHA256,
                 &ring::rand::SystemRandom::new(),
-                string_to_sign.as_bytes(),
+                string_to_sign.to_string().as_bytes(),
                 &mut signature,
             )
             .unwrap();
