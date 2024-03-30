@@ -1,3 +1,4 @@
+mod credential_scope;
 mod date;
 mod location;
 mod request_type;
@@ -9,6 +10,7 @@ use std::{
     vec,
 };
 
+use credential_scope::CredentialScope;
 use location::Location;
 use request_type::RequestType;
 use signing_algorithm::SigningAlgorithm;
@@ -29,10 +31,13 @@ fn construct_string_to_sign(
 ) -> String {
     let signing_algorithm = SigningAlgorithm::Goog4RsaSha256;
     let active_datetime = request_timestamp.format("%Y%m%dT%H%M%SZ").to_string();
-    let credential_scope = construct_credential_scope(
+    let credential_scope = CredentialScope::new(
         date::Date::try_from(request_timestamp).expect("request_timestamp to be in a valid range"),
         Location::try_from(region).expect("region to be valid location"),
-    );
+        Service::Storage,
+        RequestType::Goog4Request,
+    )
+    .to_string();
     let hashed_canonical_request = sha256::digest(canonical_request);
     [
         signing_algorithm.as_str(),
@@ -41,13 +46,6 @@ fn construct_string_to_sign(
         hashed_canonical_request.as_str(),
     ]
     .join("\n")
-}
-
-// <https://cloud.google.com/storage/docs/authentication/signatures#credential-scope>
-fn construct_credential_scope(date: date::Date, location: Location) -> String {
-    let service = Service::Storage.as_str();
-    let request_type = RequestType::Goog4Request.as_str();
-    format!("{date}/{location}/{service}/{request_type}")
 }
 
 fn add_signed_url_required_query_string_parameters(
@@ -153,10 +151,13 @@ fn sign(
     mut request: http::Request<()>,
 ) -> Result<String, Error> {
     let location = Location::try_from(region).expect("region to be valid location");
-    let credential_scope = construct_credential_scope(
+    let credential_scope = CredentialScope::new(
         date::Date::try_from(date_time).expect("date_time to be in a valid range"),
         location,
-    );
+        Service::Storage,
+        RequestType::Goog4Request,
+    )
+    .to_string();
     add_signed_url_required_query_string_parameters(
         &mut request,
         service_account_client_email,
@@ -261,7 +262,9 @@ mod tests {
             .uri("https://storage.googleapis.com/example-bucket/cat-pics/tabby.jpeg?generation=1360887697105000&userProject=my-project")
             .body(())?;
         let location = Location::try_from("us-central1")?;
-        let credential_scope = construct_credential_scope(date, location);
+        let credential_scope =
+            CredentialScope::new(date, location, Service::Storage, RequestType::Goog4Request)
+                .to_string();
         add_signed_url_required_query_string_parameters(
             &mut request,
             service_account_name,
@@ -351,13 +354,13 @@ UNSIGNED-PAYLOAD
                 .join(";");
             let authorizer = service_account_name;
             // <https://cloud.google.com/storage/docs/authentication/signatures#credential-scope>
-            let credential_scope = {
-                let date = date::Date::try_from(date_time)?.to_string();
-                let location = Location::try_from("us-central1")?;
-                let service = Service::Storage.as_str();
-                let request_type = RequestType::Goog4Request.as_str();
-                format!("{date}/{location}/{service}/{request_type}")
-            };
+            let credential_scope = CredentialScope::new(
+                date::Date::try_from(date_time)?,
+                Location::try_from("us-central1")?,
+                Service::Storage,
+                RequestType::Goog4Request,
+            )
+            .to_string();
             let x_goog_date = date_time.format("%Y%m%dT%H%M%SZ").to_string();
             let mut url1 = url::Url::parse(request.uri().to_string().as_str())?;
             let url_required_query_string_parameters_sadded = url1
