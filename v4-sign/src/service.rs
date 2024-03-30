@@ -14,14 +14,25 @@ impl Service {
     }
 }
 
+impl std::fmt::Display for Service {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.as_str().fmt(f)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test() {
+        fn assert_impls<T: Clone + Copy + std::fmt::Debug + Eq + PartialEq>() {}
+        assert_impls::<Service>();
+
         use Service::*;
         assert_eq!(Storage.as_str(), "storage");
+        assert_eq!(format!("{}", Storage), "storage");
         assert_eq!(S3.as_str(), "s3");
+        assert_eq!(format!("{}", S3), "s3");
     }
 }
