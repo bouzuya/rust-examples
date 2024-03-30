@@ -1,6 +1,17 @@
+// <https://cloud.google.com/storage/docs/authentication/signatures#credential-scope>
+
 use crate::{date::Date, location::Location, request_type::RequestType, service::Service};
 
-// <https://cloud.google.com/storage/docs/authentication/signatures#credential-scope>
+#[derive(Debug, thiserror::Error)]
+#[error(transparent)]
+pub struct Error(#[from] ErrorKind);
+
+#[derive(Debug, thiserror::Error)]
+enum ErrorKind {
+    #[error("SERVICE '{0}' and REQUEST_TYPE '{1}' is an invalid combination")]
+    InvalidCombinationOfServiceAndRequestType(Service, RequestType),
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct CredentialScope {
     date: Date,
@@ -15,13 +26,25 @@ impl CredentialScope {
         location: Location,
         service: Service,
         request_type: RequestType,
-    ) -> Self {
-        Self {
+    ) -> Result<Self, Error> {
+        match (service, request_type) {
+            (Service::Storage, RequestType::Aws4Request)
+            | (Service::S3, RequestType::Goog4Request) => {
+                return Err(Error::from(
+                    ErrorKind::InvalidCombinationOfServiceAndRequestType(service, request_type),
+                ));
+            }
+            (Service::Storage, RequestType::Goog4Request)
+            | (Service::S3, RequestType::Aws4Request) => {
+                // do nothing
+            }
+        }
+        Ok(Self {
             date,
             location,
             service,
             request_type,
-        }
+        })
     }
 }
 
@@ -30,10 +53,7 @@ impl std::fmt::Display for CredentialScope {
         write!(
             f,
             "{}/{}/{}/{}",
-            self.date,
-            self.location,
-            self.service.as_str(),
-            self.request_type.as_str()
+            self.date, self.location, self.service, self.request_type
         )
     }
 }
@@ -44,7 +64,7 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        fn assert_impls<T: Clone + std::fmt::Debug + Eq + PartialEq>() {}
+        fn assert_impls<T: Clone + std::fmt::Debug + std::fmt::Display + Eq + PartialEq>() {}
         assert_impls::<CredentialScope>();
 
         let chrono_date_time = chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339(
@@ -52,16 +72,41 @@ mod tests {
         )?
         .naive_utc()
         .and_utc();
+        let date1 = Date::try_from(chrono_date_time)?;
+        let location1 = Location::try_from("us-east1")?;
         assert_eq!(
             CredentialScope::new(
-                Date::try_from(chrono_date_time)?,
-                Location::try_from("us-east1")?,
+                date1,
+                location1.clone(),
                 Service::Storage,
                 RequestType::Goog4Request,
-            )
+            )?
             .to_string(),
             "20200102/us-east1/storage/goog4_request"
         );
+
+        assert!(CredentialScope::new(
+            date1,
+            location1.clone(),
+            Service::Storage,
+            RequestType::Aws4Request
+        )
+        .is_err());
+        assert!(CredentialScope::new(
+            date1,
+            location1.clone(),
+            Service::S3,
+            RequestType::Goog4Request
+        )
+        .is_err());
+        assert!(CredentialScope::new(
+            date1,
+            location1.clone(),
+            Service::S3,
+            RequestType::Aws4Request
+        )
+        .is_ok());
+
         Ok(())
     }
 }

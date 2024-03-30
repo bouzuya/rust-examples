@@ -25,6 +25,8 @@ use crate::service::Service;
 enum Error {
     #[error("FIXME: {0}")]
     Fixme(String),
+    #[error(transparent)]
+    CredentialScope(#[from] crate::credential_scope::Error),
 }
 
 fn add_signed_url_required_query_string_parameters(
@@ -83,7 +85,7 @@ fn sign(
         location,
         Service::Storage,
         RequestType::Goog4Request,
-    );
+    )?;
     add_signed_url_required_query_string_parameters(
         &mut request,
         service_account_client_email,
@@ -165,7 +167,7 @@ mod tests {
                 Location::try_from("us-central1")?,
                 Service::Storage,
                 RequestType::Goog4Request,
-            ),
+            )?,
             expiration,
         )?;
         let s = CanonicalRequest::new(&request).to_string();

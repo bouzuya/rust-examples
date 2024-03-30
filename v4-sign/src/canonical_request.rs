@@ -193,7 +193,7 @@ UNSIGNED-PAYLOAD
                 Location::try_from("us-central1")?,
                 Service::Storage,
                 RequestType::Goog4Request,
-            )
+            )?
             .to_string();
             let x_goog_date = ActiveDatetime::try_from(date_time)?.to_string();
             let mut url1 = url::Url::parse(request.uri().to_string().as_str())?;
