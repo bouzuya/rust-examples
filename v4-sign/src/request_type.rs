@@ -14,14 +14,25 @@ impl RequestType {
     }
 }
 
+impl std::fmt::Display for RequestType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        self.as_str().fmt(f)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn test() {
+        fn assert_impls<T: Clone + Copy + std::fmt::Debug + std::fmt::Display + Eq + PartialEq>() {}
+        assert_impls::<RequestType>();
+
         use RequestType::*;
         assert_eq!(Goog4Request.as_str(), "goog4_request");
+        assert_eq!(format!("{}", Goog4Request), "goog4_request");
         assert_eq!(Aws4Request.as_str(), "aws4_request");
+        assert_eq!(format!("{}", Aws4Request), "aws4_request");
     }
 }
