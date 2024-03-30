@@ -1,3 +1,4 @@
+mod active_datetime;
 mod credential_scope;
 mod date;
 mod location;
@@ -10,6 +11,7 @@ use std::{
     vec,
 };
 
+use active_datetime::ActiveDatetime;
 use credential_scope::CredentialScope;
 use location::Location;
 use request_type::RequestType;
@@ -30,7 +32,9 @@ fn construct_string_to_sign(
     canonical_request: &str,
 ) -> String {
     let signing_algorithm = SigningAlgorithm::Goog4RsaSha256;
-    let active_datetime = request_timestamp.format("%Y%m%dT%H%M%SZ").to_string();
+    let active_datetime = ActiveDatetime::try_from(request_timestamp)
+        .expect("request_timestamp to be in a valid range")
+        .to_string();
     let credential_scope = CredentialScope::new(
         date::Date::try_from(request_timestamp).expect("request_timestamp to be in a valid range"),
         Location::try_from(region).expect("region to be valid location"),
@@ -59,7 +63,9 @@ fn add_signed_url_required_query_string_parameters(
         return Err(Error::Fixme("Host header is required".to_string()));
     }
     let authorizer = service_account_client_email;
-    let x_goog_date = request_timestamp.format("%Y%m%dT%H%M%SZ").to_string();
+    let x_goog_date = ActiveDatetime::try_from(request_timestamp)
+        .unwrap()
+        .to_string();
     let mut url1 = url::Url::parse(request.uri().to_string().as_str()).expect("uri to be valid");
     url1.query_pairs_mut()
         .append_pair(
@@ -113,7 +119,7 @@ fn canonical_request(request: &http::Request<()>) -> String {
         .into_iter()
         .collect::<Vec<String>>()
         .join(";");
-    let canonical_query_string = canonical_query_string(&request);
+    let canonical_query_string = canonical_query_string(request);
     let canonical_headers = {
         let mut canonical_headers = BTreeMap::new();
         for (name, value) in request.headers() {
@@ -361,7 +367,7 @@ UNSIGNED-PAYLOAD
                 RequestType::Goog4Request,
             )
             .to_string();
-            let x_goog_date = date_time.format("%Y%m%dT%H%M%SZ").to_string();
+            let x_goog_date = ActiveDatetime::try_from(date_time)?.to_string();
             let mut url1 = url::Url::parse(request.uri().to_string().as_str())?;
             let url_required_query_string_parameters_sadded = url1
                 .query_pairs_mut()
