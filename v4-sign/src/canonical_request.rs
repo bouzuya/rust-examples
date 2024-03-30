@@ -97,7 +97,7 @@ pub(crate) fn percent_encode(s: &str) -> String {
 mod tests {
     use crate::{
         active_datetime::ActiveDatetime, credential_scope::CredentialScope, date,
-        location::Location, request_type::RequestType, service::Service,
+        expiration::Expiration, location::Location, request_type::RequestType, service::Service,
         signing_algorithm::SigningAlgorithm,
     };
 
@@ -145,7 +145,7 @@ UNSIGNED-PAYLOAD
             chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339("2020-01-02T03:04:05Z")?
                 .naive_utc()
                 .and_utc();
-        let expiration = 604800;
+        let expiration = Expiration::try_from(604800)?;
         let service_account_name = "service_account_name1";
         let request = http::Request::builder()
             .header("Host", "storage.googleapis.com")

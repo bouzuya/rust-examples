@@ -2,6 +2,7 @@ mod active_datetime;
 mod canonical_request;
 mod credential_scope;
 mod date;
+mod expiration;
 mod location;
 mod request_type;
 mod service;
@@ -14,6 +15,7 @@ use active_datetime::ActiveDatetime;
 use canonical_request::{canonical_query_string, CanonicalRequest};
 use credential_scope::CredentialScope;
 use date::Date;
+use expiration::Expiration;
 use location::Location;
 use request_type::RequestType;
 use signing_algorithm::SigningAlgorithm;
@@ -34,7 +36,7 @@ fn add_signed_url_required_query_string_parameters(
     service_account_client_email: &str,
     x_goog_date: ActiveDatetime,
     credential_scope: &CredentialScope,
-    expiration: i64,
+    expiration: Expiration,
 ) -> Result<(), Error> {
     if !request.headers().contains_key(http::header::HOST) {
         return Err(Error::Fixme("Host header is required".to_string()));
@@ -74,7 +76,7 @@ fn add_signed_url_required_query_string_parameters(
 fn sign(
     active_datetime: ActiveDatetime,
     location: Location,
-    expiration: i64,
+    expiration: Expiration,
     service_account_client_email: &str,
     service_account_private_key: &str,
     mut request: http::Request<()>,
@@ -148,7 +150,7 @@ mod tests {
             chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339("2020-01-02T03:04:05Z")?
                 .naive_utc()
                 .and_utc();
-        let expiration = 604800;
+        let expiration = Expiration::try_from(604800)?;
         let service_account_client_email = "service_account_name1";
         let mut request = http::Request::builder()
             .header("Host", "storage.googleapis.com")
@@ -210,7 +212,7 @@ mod tests {
 
         let active_datetime = ActiveDatetime::now();
         let location = Location::try_from(region.as_str())?;
-        let expiration = 604800;
+        let expiration = Expiration::try_from(604800)?;
         let (service_account_client_email, service_account_private_key) = {
             let path = google_application_credentials;
             let path = std::path::Path::new(path.as_str());
