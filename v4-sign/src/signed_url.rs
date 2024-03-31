@@ -24,6 +24,8 @@ enum ErrorKind {
     CredentialScope(#[from] crate::credential_scope::Error),
     #[error("host header not found")]
     HostHeaderNotFound,
+    #[error("pem key rejected: {0}")]
+    KeyRejected(ring::error::KeyRejected),
     #[error("pem: {0}")]
     Pem(pem::PemError),
     #[error("sign: {0}")]
@@ -66,8 +68,8 @@ impl SignedUrl {
         let request_signature = {
             let pkcs8 =
                 pem::parse(service_account_private_key.as_bytes()).map_err(ErrorKind::Pem)?;
-            let key_pair =
-                ring::signature::RsaKeyPair::from_pkcs8(pkcs8.contents()).expect("key to be valid");
+            let key_pair = ring::signature::RsaKeyPair::from_pkcs8(pkcs8.contents())
+                .map_err(ErrorKind::KeyRejected)?;
             let mut signature = vec![0; key_pair.public().modulus_len()];
             key_pair
                 .sign(
