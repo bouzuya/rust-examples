@@ -2,10 +2,20 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+#[derive(Debug, thiserror::Error)]
+#[error(transparent)]
+pub(crate) struct Error(#[from] ErrorKind);
+
+#[derive(Debug, thiserror::Error)]
+enum ErrorKind {
+    #[error("header value contains non visible ascii characters")]
+    HeaderValueContainsInvalidCharacter(http::header::ToStrError),
+}
+
 pub(crate) struct CanonicalRequest(String);
 
 impl CanonicalRequest {
-    pub(crate) fn new(request: &http::Request<()>) -> Self {
+    pub(crate) fn new(request: &http::Request<()>) -> Result<Self, Error> {
         let http_verb = request.method().to_string();
         let path_to_resource = percent_encode(request.uri().path());
         let signed_headers = request
@@ -23,7 +33,11 @@ impl CanonicalRequest {
                 canonical_headers
                     .entry(name.to_string().to_ascii_lowercase())
                     .or_insert_with(Vec::new)
-                    .push(value.to_str().unwrap());
+                    .push(
+                        value
+                            .to_str()
+                            .map_err(ErrorKind::HeaderValueContainsInvalidCharacter)?,
+                    );
             }
             canonical_headers
                 .into_iter()
@@ -33,7 +47,7 @@ impl CanonicalRequest {
         };
         let payload = "UNSIGNED-PAYLOAD".to_string();
         // TODO: payload hash
-        Self(
+        Ok(Self(
             [
                 http_verb,
                 path_to_resource,
@@ -44,7 +58,7 @@ impl CanonicalRequest {
                 payload,
             ]
             .join("\n"),
-        )
+        ))
     }
 }
 
@@ -114,7 +128,7 @@ mod tests {
             .uri("https://storage.googleapis.com/example-bucket/cat-pics/tabby.jpeg?generation=1360887697105000&userProject=my-project")
             .body(())?;
         assert_eq!(
-            CanonicalRequest::new(&request).to_string(),
+            CanonicalRequest::new(&request)?.to_string(),
             r#"
 POST
 /example-bucket/cat-pics/tabby.jpeg

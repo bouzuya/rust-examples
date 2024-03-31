@@ -19,6 +19,8 @@ pub struct Error(#[from] ErrorKind);
 #[derive(Debug, thiserror::Error)]
 enum ErrorKind {
     #[error(transparent)]
+    CanonicalRequest(crate::canonical_request::Error),
+    #[error(transparent)]
     CredentialScope(#[from] crate::credential_scope::Error),
     #[error("host header not found")]
     HostHeaderNotFound,
@@ -59,7 +61,7 @@ impl SignedUrl {
             SigningAlgorithm::Goog4RsaSha256,
             active_datetime,
             credential_scope,
-            CanonicalRequest::new(&request),
+            CanonicalRequest::new(&request).map_err(ErrorKind::CanonicalRequest)?,
         );
         let request_signature = {
             let pkcs8 =
@@ -181,7 +183,7 @@ mod tests {
             )?,
             expiration,
         )?;
-        let s = CanonicalRequest::new(&request).to_string();
+        let s = CanonicalRequest::new(&request)?.to_string();
         assert!(s.contains("X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=service_account_name1/20200102/us-central1/storage/goog4_request&X-Goog-Date=20200102T030405Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=content-type%3Bhost%3Bx-goog-meta-reviewer&generation=1360887697105000&userProject=my-project"));
         Ok(())
     }
