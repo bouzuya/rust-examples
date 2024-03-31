@@ -69,9 +69,7 @@ impl std::fmt::Display for CanonicalRequest {
 }
 
 pub(crate) fn canonical_query_string(request: &http::Request<()>) -> String {
-    let mut query_pairs = url::Url::parse(request.uri().to_string().as_str())
-        .expect("uri to be valid")
-        .query_pairs()
+    let mut query_pairs = form_urlencoded::parse(request.uri().query().unwrap_or("").as_bytes())
         .map(|(k, v)| format!("{}={}", percent_encode(&k), percent_encode(&v)))
         .collect::<Vec<String>>();
     query_pairs.sort();
@@ -177,11 +175,10 @@ UNSIGNED-PAYLOAD
         assert_eq!(path_to_resource, "/example-bucket/cat-pics/tabby.jpeg");
 
         let canonical_query_string = {
-            let url1 = url::Url::parse(request.uri().to_string().as_str())?;
-            let mut query_pairs = url1
-                .query_pairs()
-                .map(|(k, v)| format!("{}={}", percent_encode(&k), percent_encode(&v)))
-                .collect::<Vec<String>>();
+            let mut query_pairs =
+                form_urlencoded::parse(request.uri().query().unwrap_or("").as_bytes())
+                    .map(|(k, v)| format!("{}={}", percent_encode(&k), percent_encode(&v)))
+                    .collect::<Vec<String>>();
             query_pairs.sort();
             query_pairs.join("&")
         };
