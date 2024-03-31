@@ -18,10 +18,14 @@ pub struct Error(#[from] ErrorKind);
 
 #[derive(Debug, thiserror::Error)]
 enum ErrorKind {
-    #[error("FIXME: {0}")]
-    Fixme(String),
     #[error(transparent)]
     CredentialScope(#[from] crate::credential_scope::Error),
+    #[error("host header not found")]
+    HostHeaderNotFound,
+    #[error("pem: {0}")]
+    Pem(pem::PemError),
+    #[error("sign: {0}")]
+    Sign(ring::error::Unspecified),
 }
 
 pub struct SignedUrl(String);
@@ -58,7 +62,8 @@ impl SignedUrl {
             CanonicalRequest::new(&request),
         );
         let request_signature = {
-            let pkcs8 = pem::parse(service_account_private_key.as_bytes()).unwrap();
+            let pkcs8 =
+                pem::parse(service_account_private_key.as_bytes()).map_err(ErrorKind::Pem)?;
             let key_pair =
                 ring::signature::RsaKeyPair::from_pkcs8(pkcs8.contents()).expect("key to be valid");
             let mut signature = vec![0; key_pair.public().modulus_len()];
@@ -69,7 +74,7 @@ impl SignedUrl {
                     string_to_sign.to_string().as_bytes(),
                     &mut signature,
                 )
-                .unwrap();
+                .map_err(ErrorKind::Sign)?;
             use std::fmt::Write as _;
             signature.into_iter().fold(String::new(), |mut s, b| {
                 let _ = write!(s, "{:02x}", b);
@@ -106,7 +111,7 @@ fn add_signed_url_required_query_string_parameters(
     expiration: Expiration,
 ) -> Result<(), ErrorKind> {
     if !request.headers().contains_key(http::header::HOST) {
-        return Err(ErrorKind::Fixme("Host header is required".to_string()));
+        return Err(ErrorKind::HostHeaderNotFound);
     }
     let authorizer = service_account_client_email;
     let mut url1 = url::Url::parse(request.uri().to_string().as_str()).expect("uri to be valid");
