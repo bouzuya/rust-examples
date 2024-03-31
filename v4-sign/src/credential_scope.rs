@@ -60,6 +60,8 @@ impl std::fmt::Display for CredentialScope {
 
 #[cfg(test)]
 mod tests {
+    use crate::private::UnixTimestamp;
+
     use super::*;
 
     #[test]
@@ -67,12 +69,8 @@ mod tests {
         fn assert_impls<T: Clone + std::fmt::Debug + std::fmt::Display + Eq + PartialEq>() {}
         assert_impls::<CredentialScope>();
 
-        let chrono_date_time = chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339(
-            "2020-01-02T03:04:05+00:00",
-        )?
-        .naive_utc()
-        .and_utc();
-        let date1 = Date::try_from(chrono_date_time)?;
+        let unix_timestamp = i64::from(UnixTimestamp::from_rfc3339("2020-01-02T03:04:05+00:00")?);
+        let date1 = Date::from_unix_timestamp(unix_timestamp)?;
         let location1 = Location::try_from("us-east1")?;
         assert_eq!(
             CredentialScope::new(

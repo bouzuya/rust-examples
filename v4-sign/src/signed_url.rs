@@ -151,7 +151,7 @@ fn add_signed_url_required_query_string_parameters(
 
 #[cfg(test)]
 mod tests {
-    use crate::date::Date;
+    use crate::{date::Date, private::UnixTimestamp};
 
     use super::*;
 
@@ -159,10 +159,7 @@ mod tests {
     fn test_add_signed_url_required_query_string_parameters() -> anyhow::Result<()> {
         // TODO: host header is required
 
-        let chrono_date_time =
-            chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339("2020-01-02T03:04:05Z")?
-                .naive_utc()
-                .and_utc();
+        let unix_timestamp = i64::from(UnixTimestamp::from_rfc3339("2020-01-02T03:04:05Z")?);
         let expiration = Expiration::try_from(604800)?;
         let service_account_client_email = "service_account_name1";
         let mut request = http::Request::builder()
@@ -176,9 +173,9 @@ mod tests {
         add_signed_url_required_query_string_parameters(
             &mut request,
             service_account_client_email,
-            ActiveDatetime::try_from(chrono_date_time)?,
+            ActiveDatetime::from_unix_timestamp(unix_timestamp)?,
             &CredentialScope::new(
-                Date::try_from(chrono_date_time)?,
+                Date::from_unix_timestamp(unix_timestamp)?,
                 Location::try_from("us-central1")?,
                 Service::Storage,
                 RequestType::Goog4Request,
@@ -186,7 +183,7 @@ mod tests {
             expiration,
         )?;
         let s = CanonicalRequest::new(&request)?.to_string();
-        assert!(s.contains("X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=service_account_name1/20200102/us-central1/storage/goog4_request&X-Goog-Date=20200102T030405Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=content-type%3Bhost%3Bx-goog-meta-reviewer&generation=1360887697105000&userProject=my-project"));
+        assert!(s.contains("X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=service_account_name1%2F20200102%2Fus-central1%2Fstorage%2Fgoog4_request&X-Goog-Date=20200102T030405Z&X-Goog-Expires=604800&X-Goog-SignedHeaders=content-type%3Bhost%3Bx-goog-meta-reviewer&generation=1360887697105000&userProject=my-project"));
         Ok(())
     }
 
@@ -198,19 +195,6 @@ mod tests {
         assert!(request.headers().contains_key("Content-Type"));
         assert!(request.headers().contains_key("content-type"));
         assert!(request.headers().contains_key(http::header::CONTENT_TYPE));
-        Ok(())
-    }
-
-    #[test]
-    fn test_chrono() -> anyhow::Result<()> {
-        let chrono_date_time =
-            chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339("2020-01-02T03:04:05Z")?
-                .naive_utc()
-                .and_utc();
-        let date = chrono_date_time.format("%Y%m%d").to_string();
-        let x_goog_date = chrono_date_time.format("%Y%m%dT%H%M%SZ").to_string();
-        assert_eq!(date, "20200102");
-        assert_eq!(x_goog_date, "20200102T030405Z");
         Ok(())
     }
 

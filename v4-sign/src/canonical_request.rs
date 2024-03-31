@@ -108,8 +108,14 @@ pub(crate) fn percent_encode(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use crate::{
-        active_datetime::ActiveDatetime, credential_scope::CredentialScope, date,
-        expiration::Expiration, location::Location, request_type::RequestType, service::Service,
+        active_datetime::ActiveDatetime,
+        credential_scope::CredentialScope,
+        date,
+        expiration::Expiration,
+        location::Location,
+        private::{self, UnixTimestamp},
+        request_type::RequestType,
+        service::Service,
         signing_algorithm::SigningAlgorithm,
     };
 
@@ -153,10 +159,7 @@ UNSIGNED-PAYLOAD
 
     #[test]
     fn test_request() -> anyhow::Result<()> {
-        let date_time =
-            chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339("2020-01-02T03:04:05Z")?
-                .naive_utc()
-                .and_utc();
+        let unix_timestamp = i64::from(UnixTimestamp::from_rfc3339("2020-01-02T03:04:05Z")?);
         let expiration = Expiration::try_from(604800)?;
         let service_account_name = "service_account_name1";
         let request = http::Request::builder()
@@ -200,13 +203,13 @@ UNSIGNED-PAYLOAD
             let authorizer = service_account_name;
             // <https://cloud.google.com/storage/docs/authentication/signatures#credential-scope>
             let credential_scope = CredentialScope::new(
-                date::Date::try_from(date_time)?,
+                date::Date::from_unix_timestamp(unix_timestamp)?,
                 Location::try_from("us-central1")?,
                 Service::Storage,
                 RequestType::Goog4Request,
             )?
             .to_string();
-            let x_goog_date = ActiveDatetime::try_from(date_time)?.to_string();
+            let x_goog_date = ActiveDatetime::from_unix_timestamp(unix_timestamp)?.to_string();
             let mut url1 = url::Url::parse(request.uri().to_string().as_str())?;
             let url_required_query_string_parameters_sadded = url1
                 .query_pairs_mut()

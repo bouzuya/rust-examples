@@ -1,3 +1,5 @@
+use crate::private::{self, UnixTimestamp};
+
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]
 pub(crate) struct Error(#[from] ErrorKind);
@@ -6,8 +8,6 @@ pub(crate) struct Error(#[from] ErrorKind);
 enum ErrorKind {
     #[error("timestamp is out of range : {0}")]
     TimestampOutOfRange(i64),
-    #[error("year is out of range (0..=9999) : {0}")]
-    YearOutOfRange(i64),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -15,29 +15,9 @@ pub(crate) struct Date(u32);
 
 impl Date {
     pub(crate) fn from_unix_timestamp(unix_timestamp: i64) -> Result<Self, Error> {
-        // 0000-01-01T00:00:00Z..=9999-12-31T23:59:59Z
-        if !(-62_167_219_200..=253_402_300_799).contains(&unix_timestamp) {
-            return Err(Error::from(ErrorKind::TimestampOutOfRange(unix_timestamp)));
-        }
-        let chrono_date_time = chrono::DateTime::from_timestamp(unix_timestamp, 0_u32)
-            .ok_or(ErrorKind::TimestampOutOfRange(unix_timestamp))?;
-        Self::try_from(chrono_date_time)
-    }
-}
-
-impl std::convert::TryFrom<chrono::DateTime<chrono::Utc>> for Date {
-    type Error = Error;
-
-    fn try_from(value: chrono::DateTime<chrono::Utc>) -> Result<Self, Self::Error> {
-        let year = chrono::Datelike::year(&value);
-        if !(0..=9999).contains(&year) {
-            return Err(Error::from(ErrorKind::YearOutOfRange(i64::from(year))));
-        }
-        let year = year as u32;
-        let month = chrono::Datelike::month(&value);
-        let day = chrono::Datelike::day(&value);
-        let value = year * 10000 + month * 100 + day;
-        Ok(Self(value))
+        Ok(UnixTimestamp::try_from(unix_timestamp)
+            .map(|unix_timestamp| Self(unix_timestamp.to_date()))
+            .map_err(|_| ErrorKind::TimestampOutOfRange(unix_timestamp))?)
     }
 }
 
@@ -53,23 +33,19 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        use anyhow::Context as _;
-        let chrono_date_time = chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339(
-            "2020-01-02T03:04:05+00:00",
-        )?
-        .naive_utc()
-        .and_utc();
-        let date = Date::try_from(chrono_date_time);
+        let min_unix_timestamp =
+            i64::from(UnixTimestamp::from_rfc3339("0000-01-01T00:00:00+00:00")?);
+        assert!(Date::from_unix_timestamp(min_unix_timestamp - 1).is_err());
+        assert!(Date::from_unix_timestamp(min_unix_timestamp).is_ok());
+
+        let unix_timestamp = i64::from(UnixTimestamp::from_rfc3339("2020-01-02T03:04:05+00:00")?);
+        let date = Date::from_unix_timestamp(unix_timestamp);
         assert_eq!(date?.to_string(), "20200102");
 
-        let chrono_date_time = chrono::NaiveDate::from_ymd_opt(12000, 1, 2)
-            .context("valid naive date")?
-            .and_hms_micro_opt(3, 4, 5, 0)
-            .context("valid naive date time")?
-            .and_utc();
-        assert_eq!(chrono_date_time.to_rfc3339(), "+12000-01-02T03:04:05+00:00");
-        let date = Date::try_from(chrono_date_time);
-        assert!(date.is_err());
+        let max_unix_timestamp =
+            i64::from(UnixTimestamp::from_rfc3339("9999-12-31T23:59:59+00:00")?);
+        assert!(Date::from_unix_timestamp(max_unix_timestamp).is_ok());
+        assert!(Date::from_unix_timestamp(max_unix_timestamp + 1).is_err());
 
         assert!(Date::from_unix_timestamp(-62_167_219_201).is_err());
         assert_eq!(
