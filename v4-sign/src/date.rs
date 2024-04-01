@@ -1,4 +1,4 @@
-use crate::private::{self, UnixTimestamp};
+use crate::private::UnixTimestamp;
 
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]

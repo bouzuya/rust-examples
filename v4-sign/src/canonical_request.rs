@@ -108,15 +108,9 @@ pub(crate) fn percent_encode(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use crate::{
-        active_datetime::ActiveDatetime,
-        credential_scope::CredentialScope,
-        date,
-        expiration::Expiration,
-        location::Location,
-        private::{self, UnixTimestamp},
-        request_type::RequestType,
-        service::Service,
-        signing_algorithm::SigningAlgorithm,
+        active_datetime::ActiveDatetime, credential_scope::CredentialScope, date,
+        expiration::Expiration, location::Location, private::UnixTimestamp,
+        request_type::RequestType, service::Service, signing_algorithm::SigningAlgorithm,
     };
 
     use super::*;
