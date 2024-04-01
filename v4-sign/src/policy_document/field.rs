@@ -9,6 +9,10 @@ impl Field {
     pub fn new<S: AsRef<str>>(s: S) -> Result<Self, Error> {
         Inner::new(s).map(Field)
     }
+
+    pub(crate) fn content_length() -> Self {
+        Field(Inner::ContentLength)
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -115,5 +119,10 @@ mod tests {
             "unknown field: x-goog-meta-"
         );
         Ok(())
+    }
+
+    #[test]
+    fn test_content_length() {
+        assert_eq!(Field::content_length(), Field(Inner::ContentLength));
     }
 }

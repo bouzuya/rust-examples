@@ -29,6 +29,9 @@ impl<'de> serde::Deserialize<'de> for Condition {
                     .next_entry::<String, String>()?
                     .ok_or_else(|| serde::de::Error::invalid_length(0, &"1"))?;
                 let field = Field::new(field).map_err(serde::de::Error::custom)?;
+                if field == Field::content_length() {
+                    return Err(serde::de::Error::custom("invalid field: Content-Length"));
+                }
                 let value = Value::new(value);
                 Ok(Condition::ExactMatching(field, value))
             }
@@ -52,6 +55,9 @@ impl<'de> serde::Deserialize<'de> for Condition {
                             )
                         })?;
                         let field = Field::new(field).map_err(serde::de::Error::custom)?;
+                        if field == Field::content_length() {
+                            return Err(serde::de::Error::custom("invalid field: Content-Length"));
+                        }
                         let value = seq
                             .next_element::<String>()?
                             .ok_or_else(|| serde::de::Error::invalid_length(2, &"3"))?;
@@ -109,6 +115,14 @@ mod tests {
             Condition::ExactMatching(Field::new("Content-Type")?, Value::new("image/jpeg"))
         );
 
+        let json = r#"["eq", "$Content-Length", "123"]"#;
+        let result = serde_json::from_str::<Condition>(json);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid field: Content-Length at line 1 column 26"
+        );
+
         let json = r#"["eq"]"#;
         let result = serde_json::from_str::<Condition>(json);
         assert!(result.is_err());
@@ -144,6 +158,14 @@ mod tests {
             Condition::ExactMatching(Field::new("Content-Type")?, Value::new("image/jpeg"))
         );
 
+        let json = r#"{"Content-Length": "123"}"#;
+        let result = serde_json::from_str::<Condition>(json);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid field: Content-Length at line 1 column 25"
+        );
+
         let json = r#"{"Content-Type": "image/jpeg", "key": "foo"}"#;
         let result = serde_json::from_str::<Condition>(json);
         assert!(result.is_err());
@@ -161,6 +183,14 @@ mod tests {
         assert_eq!(
             condition,
             Condition::StartsWith(Field::new("key")?, Value::new(""))
+        );
+
+        let json = r#"["starts-with", "$Content-Length", ""]"#;
+        let result = serde_json::from_str::<Condition>(json);
+        assert!(result.is_err());
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "invalid field: Content-Length at line 1 column 35"
         );
 
         let json = r#"["starts-with", "$", ""]"#;

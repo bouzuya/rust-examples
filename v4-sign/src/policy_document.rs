@@ -8,6 +8,7 @@ pub use self::expiration::Expiration;
 pub use self::field::Field;
 pub use self::value::Value;
 
+// <https://cloud.google.com/storage/docs/authentication/signatures#policy-document>
 #[derive(Clone, Debug, Eq, PartialEq, serde::Deserialize)]
 pub struct PolicyDocument {
     pub conditions: Vec<Condition>,
