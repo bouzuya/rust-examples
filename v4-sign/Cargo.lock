@@ -1027,6 +1027,7 @@ dependencies = [
  "pem",
  "reqwest",
  "ring",
+ "serde",
  "serde_json",
  "sha256",
  "thiserror",

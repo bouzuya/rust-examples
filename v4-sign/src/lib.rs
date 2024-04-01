@@ -4,6 +4,7 @@ mod credential_scope;
 mod date;
 mod expiration;
 mod location;
+pub mod policy_document;
 mod private;
 mod request_type;
 mod service;
