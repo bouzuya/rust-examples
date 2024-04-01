@@ -6,6 +6,13 @@ pub(crate) struct Error;
 pub(crate) struct UnixTimestamp(i64);
 
 impl UnixTimestamp {
+    pub(crate) fn from_iso8601_basic_format_date_time(s: &str) -> Result<Self, Error> {
+        let chrono_date_time = chrono::NaiveDateTime::parse_from_str(s, "%Y%m%dT%H%M%SZ")
+            .map_err(|_| Error)?
+            .and_utc();
+        Self::try_from(chrono_date_time.timestamp())
+    }
+
     pub(crate) fn from_rfc3339(s: &str) -> Result<Self, Error> {
         let chrono_date_time =
             chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339(s).map_err(|_| Error)?;
@@ -52,6 +59,8 @@ impl std::convert::TryFrom<i64> for UnixTimestamp {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+
     #[test]
     fn test_chrono() -> anyhow::Result<()> {
         let chrono_date_time =
@@ -62,6 +71,18 @@ mod tests {
         let x_goog_date = chrono_date_time.format("%Y%m%dT%H%M%SZ").to_string();
         assert_eq!(date, "20200102");
         assert_eq!(x_goog_date, "20200102T030405Z");
+        Ok(())
+    }
+
+    #[test]
+    fn test_convert_iso8601_basic_format_date_time() -> anyhow::Result<()> {
+        for s in ["00000101T000000Z", "20200102T030405Z", "99991231T235959Z"] {
+            assert_eq!(
+                UnixTimestamp::from_iso8601_basic_format_date_time(s)?
+                    .to_iso8601_basic_format_date_time(),
+                s
+            );
+        }
         Ok(())
     }
 }
