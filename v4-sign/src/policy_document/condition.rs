@@ -93,6 +93,25 @@ impl<'de> serde::Deserialize<'de> for Condition {
     }
 }
 
+impl serde::Serialize for Condition {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Condition::ExactMatching(field, value) => {
+                ("eq", format!("${}", field), value.to_string()).serialize(serializer)
+            }
+            Condition::StartsWith(field, value) => {
+                ("starts-with", format!("${}", field), value.to_string()).serialize(serializer)
+            }
+            Condition::ContentLengthRange(min_range, max_range) => {
+                ("content-length-range", min_range, max_range).serialize(serializer)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,7 +119,12 @@ mod tests {
     #[test]
     fn test_impls() {
         fn assert_impls<
-            T: Clone + std::fmt::Debug + Eq + PartialEq + serde::Deserialize<'static>,
+            T: Clone
+                + std::fmt::Debug
+                + Eq
+                + PartialEq
+                + serde::Deserialize<'static>
+                + serde::Serialize,
         >() {
         }
         assert_impls::<Condition>();
@@ -280,6 +304,28 @@ mod tests {
             result.unwrap_err().to_string(),
             "trailing characters at line 1 column 38"
         );
+        Ok(())
+    }
+
+    #[test]
+    fn test_serialize() -> anyhow::Result<()> {
+        for (condition, json) in [
+            (
+                Condition::ExactMatching(Field::new("Content-Type")?, Value::new("image/jpeg")),
+                r#"["eq","$Content-Type","image/jpeg"]"#,
+            ),
+            (
+                Condition::StartsWith(Field::new("key")?, Value::new("")),
+                r#"["starts-with","$key",""]"#,
+            ),
+            (
+                Condition::ContentLengthRange(0, 1000000),
+                r#"["content-length-range",0,1000000]"#,
+            ),
+        ] {
+            assert_eq!(serde_json::to_string(&condition)?, json);
+            assert_eq!(serde_json::from_str::<Condition>(json)?, condition);
+        }
         Ok(())
     }
 }
