@@ -15,6 +15,12 @@ impl Field {
     }
 }
 
+impl std::fmt::Display for Field {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Inner {
     Acl,
@@ -73,6 +79,33 @@ impl Inner {
     }
 }
 
+impl std::fmt::Display for Inner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Inner::Acl => "acl".to_string(),
+            Inner::Bucket => "bucket".to_string(),
+            Inner::CacheControl => "Cache-Control".to_string(),
+            Inner::ContentDisposition => "Content-Disposition".to_string(),
+            Inner::ContentEncoding => "Content-Encoding".to_string(),
+            Inner::ContentLength => "Content-Length".to_string(),
+            Inner::ContentType => "Content-Type".to_string(),
+            Inner::Expires => "Expires".to_string(),
+            Inner::File => "file".to_string(),
+            Inner::Key => "key".to_string(),
+            Inner::Policy => "policy".to_string(),
+            Inner::SuccessActionRedirect => "success_action_redirect".to_string(),
+            Inner::SuccessActionStatus => "success_action_status".to_string(),
+            Inner::XGoogAlgorithm => "x-goog-algorithm".to_string(),
+            Inner::XGoogCredential => "x-goog-credential".to_string(),
+            Inner::XGoogCustomTime => "x-goog-custom-time".to_string(),
+            Inner::XGoogDate => "x-goog-date".to_string(),
+            Inner::XGoogSignature => "x-goog-signature".to_string(),
+            Inner::XGoogMeta(s) => format!("x-goog-meta-{}", s),
+        }
+        .fmt(f)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -107,6 +140,7 @@ mod tests {
             ),
         ] {
             assert_eq!(Field::new(field)?, Field(inner.clone()));
+            assert_eq!(Field::new(field)?.to_string(), field);
         }
 
         assert_eq!(Field::new("").unwrap_err().to_string(), "unknown field: ");
