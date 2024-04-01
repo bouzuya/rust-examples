@@ -59,6 +59,15 @@ impl<'de> serde::Deserialize<'de> for Expiration {
     }
 }
 
+impl serde::Serialize for Expiration {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.to_string().serialize(serializer)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -72,7 +81,8 @@ mod tests {
                 + Eq
                 + PartialEq
                 + std::str::FromStr
-                + serde::Deserialize<'static>,
+                + serde::Deserialize<'static>
+                + serde::Serialize,
         >() {
         }
         assert_impls::<Expiration>();
@@ -84,6 +94,7 @@ mod tests {
             serde_json::from_str::<Expiration>(&format!("\"{}\"", s))?,
             expiration
         );
+        assert_eq!(serde_json::to_string(&expiration)?, format!("\"{}\"", s));
         Ok(())
     }
 }
