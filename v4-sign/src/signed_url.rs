@@ -68,18 +68,13 @@ impl SignedUrl {
         let request_signature = {
             let pkcs8 =
                 pem::parse(service_account_private_key.as_bytes()).map_err(ErrorKind::Pem)?;
-            let key_pair = ring::signature::RsaKeyPair::from_pkcs8(pkcs8.contents())
-                .map_err(ErrorKind::KeyRejected)?;
-            let mut signature = vec![0; key_pair.public().modulus_len()];
-            key_pair
-                .sign(
-                    &ring::signature::RSA_PKCS1_SHA256,
-                    &ring::rand::SystemRandom::new(),
-                    string_to_sign.to_string().as_bytes(),
-                    &mut signature,
-                )
-                .map_err(ErrorKind::Sign)?;
-            hex_encode(&signature)
+            let signing_key = pkcs8.contents();
+            let message_digest = sign(
+                SigningAlgorithm::Goog4RsaSha256,
+                signing_key,
+                string_to_sign.to_string().as_bytes(),
+            )?;
+            hex_encode(&message_digest)
         };
 
         let hostname = "https://storage.googleapis.com";
@@ -151,6 +146,26 @@ fn hex_encode(message_digest: &[u8]) -> String {
         let _ = write!(s, "{:02x}", b);
         s
     })
+}
+
+fn sign(algorithm: SigningAlgorithm, key: &[u8], message: &[u8]) -> Result<Vec<u8>, Error> {
+    match algorithm {
+        SigningAlgorithm::Goog4RsaSha256 => {
+            let key_pair =
+                ring::signature::RsaKeyPair::from_pkcs8(key).map_err(ErrorKind::KeyRejected)?;
+            let mut signature = vec![0; key_pair.public().modulus_len()];
+            key_pair
+                .sign(
+                    &ring::signature::RSA_PKCS1_SHA256,
+                    &ring::rand::SystemRandom::new(),
+                    message,
+                    &mut signature,
+                )
+                .map_err(ErrorKind::Sign)?;
+            Ok(signature)
+        }
+        _ => unimplemented!(),
+    }
 }
 
 #[cfg(test)]
