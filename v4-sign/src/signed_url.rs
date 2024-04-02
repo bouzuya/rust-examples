@@ -79,11 +79,7 @@ impl SignedUrl {
                     &mut signature,
                 )
                 .map_err(ErrorKind::Sign)?;
-            use std::fmt::Write as _;
-            signature.into_iter().fold(String::new(), |mut s, b| {
-                let _ = write!(s, "{:02x}", b);
-                s
-            })
+            hex_encode(&signature)
         };
 
         let hostname = "https://storage.googleapis.com";
@@ -147,6 +143,14 @@ fn add_signed_url_required_query_string_parameters(
         .finish();
     *request.uri_mut() = http::Uri::try_from(url1.to_string()).expect("url to be valid");
     Ok(())
+}
+
+fn hex_encode(message_digest: &[u8]) -> String {
+    use std::fmt::Write as _;
+    message_digest.iter().fold(String::new(), |mut s, b| {
+        let _ = write!(s, "{:02x}", b);
+        s
+    })
 }
 
 #[cfg(test)]
