@@ -15,7 +15,7 @@ fn test_policy_document() -> anyhow::Result<()> {
     {"x-goog-credential": "example_account@example_project.iam.gserviceaccount.com/20191102/us-central1/storage/goog4_request"},
     {"x-goog-date": "20191102T043530Z"}
   ],
-  "expiration": "20200616T111111Z"
+  "expiration": "2020-06-16T11:11:11Z"
 }
 "#.trim();
     let policy_document: PolicyDocument = serde_json::from_str(json)?;
@@ -53,7 +53,7 @@ fn test_policy_document() -> anyhow::Result<()> {
                         Value::new("20191102T043530Z")
                     )
                 ],
-                expiration: Expiration::from_str("20200616T111111Z")?,
+                expiration: Expiration::from_str("2020-06-16T11:11:11Z")?,
             }
         );
     Ok(())
@@ -96,7 +96,7 @@ fn test_impl_serialize_policy_document() -> anyhow::Result<()> {
                         Value::new("20191102T043530Z")
                     )
                 ],
-                expiration: Expiration::from_str("20200616T111111Z")?,
+                expiration: Expiration::from_str("2020-06-16T11:11:11Z")?,
             };
     assert_eq!(
             serde_json::to_string_pretty(&policy_document)?,
@@ -144,7 +144,7 @@ r#"
       "20191102T043530Z"
     ]
   ],
-  "expiration": "20200616T111111Z"
+  "expiration": "2020-06-16T11:11:11Z"
 }
 "#.trim());
     Ok(())

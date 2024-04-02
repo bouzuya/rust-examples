@@ -13,13 +13,14 @@ enum ErrorKind {
     InvalidFormatOrOutOfRange(#[from] crate::private::Error),
 }
 
-// YYYYMMDD'T'HHMMSS'Z'
+// <del>YYYYMMDD'T'HHMMSS'Z'</del>
+// The document is wrong. The document says it is in the format of YYYYMMDD'T'HHMMSS'Z', but it is actually in RFC3339 format.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Expiration(UnixTimestamp);
 
 impl std::fmt::Display for Expiration {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        self.0.to_iso8601_basic_format_date_time().fmt(f)
+        self.0.to_rfc3339().fmt(f)
     }
 }
 
@@ -27,8 +28,7 @@ impl std::str::FromStr for Expiration {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let unix_timestamp =
-            UnixTimestamp::from_iso8601_basic_format_date_time(s).map_err(ErrorKind::from)?;
+        let unix_timestamp = UnixTimestamp::from_rfc3339(s).map_err(ErrorKind::from)?;
         Ok(Expiration(unix_timestamp))
     }
 }
@@ -44,7 +44,7 @@ impl<'de> serde::Deserialize<'de> for Expiration {
             type Value = Expiration;
 
             fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                formatter.write_str("a string in the format of YYYYMMDD'T'HHMMSS'Z'")
+                formatter.write_str("a string in the format of YYYY-MM-DD'T'HH:MM:SS'Z'")
             }
 
             fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
@@ -87,7 +87,7 @@ mod tests {
         }
         assert_impls::<Expiration>();
 
-        let s = "20200616T111111Z";
+        let s = "2020-06-16T11:11:11Z";
         let expiration = Expiration::from_str(s).unwrap();
         assert_eq!(expiration.to_string(), s);
         assert_eq!(

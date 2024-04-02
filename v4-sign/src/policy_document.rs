@@ -41,7 +41,7 @@ mod tests {
                 Condition::StartsWith(Field::new("key")?, Value::new("")),
                 Condition::ContentLengthRange(0, 1000000),
             ],
-            expiration: Expiration::from_str("20200616T111111Z")?,
+            expiration: Expiration::from_str("2020-06-16T11:11:11Z")?,
         };
 
         let json = r#"
@@ -52,7 +52,7 @@ mod tests {
     ["starts-with", "$key", ""],
     ["content-length-range", 0, 1000000]
   ],
-  "expiration": "20200616T111111Z"
+  "expiration": "2020-06-16T11:11:11Z"
 }
 "#
         .trim();
@@ -86,7 +86,7 @@ mod tests {
       1000000
     ]
   ],
-  "expiration": "20200616T111111Z"
+  "expiration": "2020-06-16T11:11:11Z"
 }
             "#
             .trim()
