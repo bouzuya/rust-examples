@@ -7,7 +7,7 @@ fn test_credential_scope() -> anyhow::Result<()> {
     use v4_sign::Service;
 
     let credential_scope = CredentialScope::new(
-        Date::from_unix_timestamp(1_712_016_000_i64)?,
+        Date::try_from("20240402")?,
         Location::try_from("us-central1")?,
         Service::Storage,
         RequestType::Goog4Request,

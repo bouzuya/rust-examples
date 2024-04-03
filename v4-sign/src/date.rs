@@ -6,6 +6,8 @@ pub struct Error(#[from] ErrorKind);
 
 #[derive(Debug, thiserror::Error)]
 enum ErrorKind {
+    #[error("invalid format : {0}")]
+    InvalidFormat(String),
     #[error("timestamp is out of range : {0}")]
     TimestampOutOfRange(i64),
 }
@@ -18,6 +20,33 @@ impl Date {
         Ok(UnixTimestamp::try_from(unix_timestamp)
             .map(|unix_timestamp| Self(unix_timestamp.to_date()))
             .map_err(|_| ErrorKind::TimestampOutOfRange(unix_timestamp))?)
+    }
+}
+
+impl std::convert::TryFrom<&str> for Date {
+    type Error = Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        if value.len() != 8 {
+            return Err(ErrorKind::InvalidFormat(value.to_string()))?;
+        }
+        let yyyymmdd = value
+            .parse::<u32>()
+            .map_err(|_| ErrorKind::InvalidFormat(value.to_string()))?;
+        let yyyy = yyyymmdd / 10000;
+        if !(0..=9999).contains(&yyyy) {
+            return Err(ErrorKind::InvalidFormat(value.to_string()))?;
+        }
+        let mm = (yyyymmdd % 10000) / 100;
+        if !(1..=12).contains(&mm) {
+            return Err(ErrorKind::InvalidFormat(value.to_string()))?;
+        }
+        let dd = yyyymmdd % 100;
+        if !(1..=31).contains(&dd) {
+            return Err(ErrorKind::InvalidFormat(value.to_string()))?;
+        }
+        // FIXME: validate date
+        Ok(Self(yyyy * 10000 + mm * 100 + dd))
     }
 }
 
@@ -61,6 +90,14 @@ mod tests {
             "99991231"
         );
         assert!(Date::from_unix_timestamp(253_402_300_800).is_err());
+        Ok(())
+    }
+
+    #[test]
+    fn test_try_from_str() -> anyhow::Result<()> {
+        assert_eq!(Date::try_from("00000101")?.to_string(), "00000101");
+        assert_eq!(Date::try_from("20200102")?.to_string(), "20200102");
+        assert_eq!(Date::try_from("99991231")?.to_string(), "99991231");
         Ok(())
     }
 }
