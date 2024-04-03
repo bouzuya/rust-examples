@@ -1,7 +1,7 @@
-mod condition;
-mod expiration;
-mod field;
-mod value;
+pub mod condition;
+pub mod expiration;
+pub mod field;
+pub mod value;
 
 pub use self::condition::Condition;
 pub use self::expiration::Expiration;

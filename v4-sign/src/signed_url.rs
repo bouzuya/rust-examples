@@ -125,7 +125,7 @@ fn add_signed_url_required_query_string_parameters(
     Ok(())
 }
 
-fn hex_encode(message_digest: &[u8]) -> String {
+pub(crate) fn hex_encode(message_digest: &[u8]) -> String {
     use std::fmt::Write as _;
     message_digest.iter().fold(String::new(), |mut s, b| {
         let _ = write!(s, "{:02x}", b);
@@ -133,7 +133,11 @@ fn hex_encode(message_digest: &[u8]) -> String {
     })
 }
 
-fn sign(algorithm: SigningAlgorithm, key: &[u8], message: &[u8]) -> Result<Vec<u8>, Error> {
+pub(crate) fn sign(
+    algorithm: SigningAlgorithm,
+    key: &[u8],
+    message: &[u8],
+) -> Result<Vec<u8>, Error> {
     match algorithm {
         SigningAlgorithm::Goog4RsaSha256 => {
             let key_pair =

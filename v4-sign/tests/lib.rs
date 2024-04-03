@@ -40,6 +40,46 @@ fn test_signing_algorithm() -> anyhow::Result<()> {
 
 #[ignore]
 #[tokio::test]
+async fn test_html_form() -> anyhow::Result<()> {
+    use v4_sign::html_form_params;
+    use v4_sign::signed_url;
+
+    let bucket_name = std::env::var("BUCKET_NAME")?;
+    let object_name = "/foo";
+    let region = std::env::var("REGION")?;
+
+    let form_params = html_form_params(&bucket_name, object_name, &region, 2)?;
+    let client = reqwest::Client::new();
+    let response = client
+        .post(format!("https://storage.googleapis.com/{}", bucket_name))
+        .multipart({
+            let mut form = reqwest::multipart::Form::new();
+            for (name, value) in form_params {
+                form = form.text(name, value)
+            }
+            form.part(
+                "file",
+                reqwest::multipart::Part::bytes(include_bytes!("./a.txt").to_vec()),
+            )
+        })
+        .send()
+        .await?;
+    assert_eq!(response.status().as_u16(), 204);
+    assert_eq!(response.text().await?, "");
+
+    let url = signed_url(&bucket_name, object_name, &region, 2, "GET")?;
+    let response = reqwest::get(url).await?;
+    assert_eq!(response.status().as_u16(), 200);
+    assert_eq!(
+        response.bytes().await?.to_vec(),
+        include_bytes!("./a.txt").to_vec()
+    );
+
+    Ok(())
+}
+
+#[ignore]
+#[tokio::test]
 async fn test_setup_a_txt() -> anyhow::Result<()> {
     use v4_sign::signed_url;
 

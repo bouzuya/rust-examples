@@ -12,9 +12,14 @@ mod signed_url;
 mod signing_algorithm;
 mod string_to_sign;
 
+use std::str::FromStr;
+
 use active_datetime::ActiveDatetime;
 use expiration::Expiration;
-use signed_url::SignedUrl;
+use private::UnixTimestamp;
+use signed_url::{hex_encode, SignedUrl};
+
+use crate::signed_url::sign;
 
 pub use self::credential_scope::CredentialScope;
 pub use self::date::Date;
@@ -35,6 +40,8 @@ enum ErrorKind {
     Expiration(crate::expiration::Error),
     #[error(transparent)]
     File(std::io::Error),
+    #[error(transparent)]
+    Field(crate::policy_document::field::Error),
     #[error("env var GOOGLE_APPLICATION_CREDENTIALS is not found")]
     GoogleApplicationCredentialsNotFound,
     #[error(transparent)]
@@ -57,6 +64,85 @@ enum ErrorKind {
     ServiceAccountJsonPrivateKeyIsNotString,
     #[error(transparent)]
     SignedUrl(crate::signed_url::Error),
+}
+
+pub fn html_form_params(
+    bucket_name: &str,
+    object_name: &str,
+    region: &str,
+    expiration: i64,
+) -> Result<Vec<(&'static str, String)>, Error> {
+    let google_application_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS")
+        .map_err(|_| ErrorKind::GoogleApplicationCredentialsNotFound)?;
+    let (service_account_client_email, service_account_private_key) =
+        load_service_account_credentials(google_application_credentials.as_str())?;
+    let active_datetime = ActiveDatetime::now();
+
+    let key = object_name.strip_prefix('/').unwrap();
+    let credential_scope = CredentialScope::new(
+        Date::from_unix_timestamp(active_datetime.unix_timestamp())
+            .expect("active_datetime.unix_timestamp to be valid date"),
+        Location::try_from(region).map_err(ErrorKind::Location)?,
+        Service::Storage,
+        RequestType::Goog4Request,
+    )
+    .map_err(ErrorKind::CredentialScope)?;
+    let x_goog_algorithm = SigningAlgorithm::Goog4RsaSha256;
+    let x_goog_credential = format!("{}/{}", service_account_client_email, credential_scope);
+    let x_goog_date = active_datetime.to_string();
+    let policy_document = policy_document::PolicyDocument {
+        conditions: vec![
+            policy_document::Condition::ExactMatching(
+                policy_document::Field::new("bucket").map_err(ErrorKind::Field)?,
+                policy_document::Value::new(bucket_name),
+            ),
+            policy_document::Condition::ExactMatching(
+                policy_document::Field::new("key").map_err(ErrorKind::Field)?,
+                policy_document::Value::new(key),
+            ),
+            // `policy` field is not included in the policy document
+            policy_document::Condition::ExactMatching(
+                policy_document::Field::new("x-goog-algorithm").map_err(ErrorKind::Field)?,
+                policy_document::Value::new(x_goog_algorithm.as_ref()),
+            ),
+            policy_document::Condition::ExactMatching(
+                policy_document::Field::new("x-goog-credential").map_err(ErrorKind::Field)?,
+                policy_document::Value::new(x_goog_credential.as_str()),
+            ),
+            policy_document::Condition::ExactMatching(
+                policy_document::Field::new("x-goog-date").map_err(ErrorKind::Field)?,
+                policy_document::Value::new(x_goog_date.clone()),
+            ),
+            // `x-goog-signature` field is not included in the policy document
+            // `file` field is not included in the policy document
+        ],
+        expiration: policy_document::Expiration::from_str(
+            &UnixTimestamp::try_from(active_datetime.unix_timestamp() + expiration)
+                .unwrap()
+                .to_rfc3339(),
+        )
+        .unwrap(),
+    };
+    let policy = serde_json::to_string(&policy_document).unwrap();
+    let encoded_policy = base64::Engine::encode(
+        &base64::engine::general_purpose::STANDARD,
+        policy.as_bytes(),
+    );
+    let message = encoded_policy.as_str();
+    let pkcs8 = pem::parse(service_account_private_key.as_bytes()).unwrap();
+    let signing_key = pkcs8.contents();
+    let message_digest = sign(x_goog_algorithm, signing_key, message.as_bytes()).unwrap();
+    let request_signature = hex_encode(&message_digest);
+
+    Ok(vec![
+        ("bucket", bucket_name.to_string()),
+        ("key", key.to_string()),
+        ("policy", encoded_policy),
+        ("x-goog-algorithm", x_goog_algorithm.as_ref().to_string()),
+        ("x-goog-credential", x_goog_credential),
+        ("x-goog-date", x_goog_date),
+        ("x-goog-signature", request_signature),
+    ])
 }
 
 // FIXME: signature
