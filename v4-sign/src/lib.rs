@@ -128,6 +128,7 @@ pub fn html_form_params(
         &base64::engine::general_purpose::STANDARD,
         policy.as_bytes(),
     );
+
     let message = encoded_policy.as_str();
     let pkcs8 = pem::parse(service_account_private_key.as_bytes()).unwrap();
     let signing_key = pkcs8.contents();
@@ -158,27 +159,31 @@ pub fn signed_url(
     let (service_account_client_email, service_account_private_key) =
         load_service_account_credentials(google_application_credentials.as_str())?;
     let active_datetime = ActiveDatetime::now();
+
     let request = http::Request::builder()
         .header("Host", "storage.googleapis.com")
         .method(http::Method::try_from(http_method).map_err(ErrorKind::HttpMethod)?)
         .uri(
             format!(
                 "https://storage.googleapis.com/{}{}",
-                bucket_name, object_name
+                // TODO: escape bucket_name and object_name
+                bucket_name,
+                object_name
             )
             .as_str(),
         )
         .body(())
         .map_err(ErrorKind::HttpRequest)?;
+    let credential_scope = CredentialScope::new(
+        Date::from_unix_timestamp(active_datetime.unix_timestamp())
+            .expect("active_datetime.unix_timestamp to be valid date"),
+        Location::try_from(region).map_err(ErrorKind::Location)?,
+        Service::Storage,
+        RequestType::Goog4Request,
+    )
+    .map_err(ErrorKind::CredentialScope)?;
     let signed_url = SignedUrl::new(
-        &CredentialScope::new(
-            Date::from_unix_timestamp(active_datetime.unix_timestamp())
-                .expect("active_datetime.unix_timestamp to be valid date"),
-            Location::try_from(region).map_err(ErrorKind::Location)?,
-            Service::Storage,
-            RequestType::Goog4Request,
-        )
-        .map_err(ErrorKind::CredentialScope)?,
+        &credential_scope,
         active_datetime,
         Expiration::try_from(expiration).map_err(ErrorKind::Expiration)?,
         &service_account_client_email,

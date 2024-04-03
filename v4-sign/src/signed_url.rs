@@ -36,31 +36,28 @@ impl SignedUrl {
         service_account_private_key: &str,
         mut request: http::Request<()>,
     ) -> Result<Self, Error> {
+        let x_goog_algorithm = SigningAlgorithm::Goog4RsaSha256;
         add_signed_url_required_query_string_parameters(
             &mut request,
             service_account_client_email,
+            x_goog_algorithm,
             active_datetime,
             credential_scope,
             expiration,
         )?;
         let canonical_query_string = canonical_query_string(&request);
         let string_to_sign = StringToSign::new(
-            SigningAlgorithm::Goog4RsaSha256,
+            x_goog_algorithm,
             active_datetime,
             credential_scope,
             CanonicalRequest::new(&request).map_err(ErrorKind::CanonicalRequest)?,
         );
-        let request_signature = {
-            let pkcs8 =
-                pem::parse(service_account_private_key.as_bytes()).map_err(ErrorKind::Pem)?;
-            let signing_key = pkcs8.contents();
-            let message_digest = sign(
-                SigningAlgorithm::Goog4RsaSha256,
-                signing_key,
-                string_to_sign.to_string().as_bytes(),
-            )?;
-            hex_encode(&message_digest)
-        };
+
+        let message = string_to_sign.to_string();
+        let pkcs8 = pem::parse(service_account_private_key.as_bytes()).map_err(ErrorKind::Pem)?;
+        let signing_key = pkcs8.contents();
+        let message_digest = sign(x_goog_algorithm, signing_key, message.as_bytes())?;
+        let request_signature = hex_encode(&message_digest);
 
         let hostname = "https://storage.googleapis.com";
         let path_to_resource = request.uri().path();
@@ -86,6 +83,7 @@ impl std::convert::From<SignedUrl> for String {
 fn add_signed_url_required_query_string_parameters(
     request: &mut http::Request<()>,
     service_account_client_email: &str,
+    x_goog_algorithm: SigningAlgorithm,
     x_goog_date: ActiveDatetime,
     credential_scope: &CredentialScope,
     expiration: Expiration,
@@ -96,10 +94,7 @@ fn add_signed_url_required_query_string_parameters(
     let authorizer = service_account_client_email;
     let mut url1 = url::Url::parse(request.uri().to_string().as_str()).expect("uri to be valid");
     url1.query_pairs_mut()
-        .append_pair(
-            "X-Goog-Algorithm",
-            SigningAlgorithm::Goog4RsaSha256.as_str(),
-        )
+        .append_pair("X-Goog-Algorithm", x_goog_algorithm.as_str())
         .append_pair(
             "X-Goog-Credential",
             format!("{authorizer}/{credential_scope}")
@@ -179,6 +174,7 @@ mod tests {
         add_signed_url_required_query_string_parameters(
             &mut request,
             service_account_client_email,
+            SigningAlgorithm::Goog4RsaSha256,
             ActiveDatetime::from_unix_timestamp(unix_timestamp)?,
             &CredentialScope::new(
                 Date::from_unix_timestamp(unix_timestamp)?,
