@@ -21,6 +21,7 @@ pub use self::date::Date;
 pub use self::location::Location;
 pub use self::request_type::RequestType;
 pub use self::service::Service;
+pub use self::signing_algorithm::SigningAlgorithm;
 
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]

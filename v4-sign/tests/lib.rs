@@ -19,6 +19,25 @@ fn test_credential_scope() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[test]
+fn test_signing_algorithm() -> anyhow::Result<()> {
+    use v4_sign::SigningAlgorithm;
+
+    assert_eq!(
+        SigningAlgorithm::Goog4RsaSha256.as_ref(),
+        "GOOG4-RSA-SHA256"
+    );
+    assert_eq!(
+        SigningAlgorithm::Goog4HmacSha256.as_ref(),
+        "GOOG4-HMAC-SHA256"
+    );
+    assert_eq!(
+        SigningAlgorithm::Aws4HmacSha256.as_ref(),
+        "AWS4-HMAC-SHA256"
+    );
+    Ok(())
+}
+
 #[ignore]
 #[tokio::test]
 async fn test_setup_a_txt() -> anyhow::Result<()> {
