@@ -2,7 +2,7 @@ use crate::private::UnixTimestamp;
 
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]
-pub(crate) struct Error(#[from] ErrorKind);
+pub struct Error(#[from] ErrorKind);
 
 #[derive(Debug, thiserror::Error)]
 enum ErrorKind {
@@ -11,10 +11,10 @@ enum ErrorKind {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) struct Date(u32);
+pub struct Date(u32);
 
 impl Date {
-    pub(crate) fn from_unix_timestamp(unix_timestamp: i64) -> Result<Self, Error> {
+    pub fn from_unix_timestamp(unix_timestamp: i64) -> Result<Self, Error> {
         Ok(UnixTimestamp::try_from(unix_timestamp)
             .map(|unix_timestamp| Self(unix_timestamp.to_date()))
             .map_err(|_| ErrorKind::TimestampOutOfRange(unix_timestamp))?)

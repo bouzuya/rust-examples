@@ -13,7 +13,7 @@ enum ErrorKind {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct CredentialScope {
+pub struct CredentialScope {
     date: Date,
     location: Location,
     service: Service,
@@ -21,7 +21,7 @@ pub(crate) struct CredentialScope {
 }
 
 impl CredentialScope {
-    pub(crate) fn new(
+    pub fn new(
         date: Date,
         location: Location,
         service: Service,

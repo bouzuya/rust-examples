@@ -14,8 +14,13 @@ mod string_to_sign;
 
 use active_datetime::ActiveDatetime;
 use expiration::Expiration;
-use location::Location;
 use signed_url::SignedUrl;
+
+pub use self::credential_scope::CredentialScope;
+pub use self::date::Date;
+pub use self::location::Location;
+pub use self::request_type::RequestType;
+pub use self::service::Service;
 
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]

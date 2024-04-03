@@ -1,13 +1,13 @@
 /// <https://cloud.google.com/storage/docs/authentication/signatures?hl=ja#credential-scope>
 #[derive(Debug, thiserror::Error)]
 #[error("invalid location")]
-pub(crate) struct Error;
+pub struct Error;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(crate) struct Location(String);
+pub struct Location(String);
 
 impl Location {
-    pub(crate) fn as_str(&self) -> &str {
+    pub fn as_str(&self) -> &str {
         self.0.as_str()
     }
 }

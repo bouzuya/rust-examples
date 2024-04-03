@@ -1,6 +1,6 @@
 /// <https://cloud.google.com/storage/docs/authentication/signatures?hl=ja#credential-scope>
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum Service {
+pub enum Service {
     Storage,
     S3,
 }

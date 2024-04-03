@@ -1,3 +1,24 @@
+#[test]
+fn test_credential_scope() -> anyhow::Result<()> {
+    use v4_sign::CredentialScope;
+    use v4_sign::Date;
+    use v4_sign::Location;
+    use v4_sign::RequestType;
+    use v4_sign::Service;
+
+    let credential_scope = CredentialScope::new(
+        Date::from_unix_timestamp(1_712_016_000_i64)?,
+        Location::try_from("us-central1")?,
+        Service::Storage,
+        RequestType::Goog4Request,
+    )?;
+    assert_eq!(
+        credential_scope.to_string(),
+        "20240402/us-central1/storage/goog4_request"
+    );
+    Ok(())
+}
+
 #[ignore]
 #[tokio::test]
 async fn test_setup_a_txt() -> anyhow::Result<()> {
