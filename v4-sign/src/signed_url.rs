@@ -3,14 +3,9 @@ use std::{collections::BTreeSet, vec};
 use crate::active_datetime::ActiveDatetime;
 use crate::canonical_request::{canonical_query_string, CanonicalRequest};
 use crate::credential_scope::CredentialScope;
-use crate::date::Date;
 use crate::expiration::Expiration;
-use crate::location::Location;
-use crate::request_type::RequestType;
 use crate::signing_algorithm::SigningAlgorithm;
 use crate::string_to_sign::StringToSign;
-
-use crate::service::Service;
 
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]
@@ -20,8 +15,6 @@ pub struct Error(#[from] ErrorKind);
 enum ErrorKind {
     #[error(transparent)]
     CanonicalRequest(crate::canonical_request::Error),
-    #[error(transparent)]
-    CredentialScope(#[from] crate::credential_scope::Error),
     #[error("host header not found")]
     HostHeaderNotFound,
     #[error("pem key rejected: {0}")]
@@ -36,26 +29,18 @@ pub struct SignedUrl(String);
 
 impl SignedUrl {
     pub(crate) fn new(
+        credential_scope: &CredentialScope,
         active_datetime: ActiveDatetime,
-        location: Location,
         expiration: Expiration,
         service_account_client_email: &str,
         service_account_private_key: &str,
         mut request: http::Request<()>,
     ) -> Result<Self, Error> {
-        let credential_scope = CredentialScope::new(
-            Date::from_unix_timestamp(active_datetime.unix_timestamp())
-                .expect("active_datetime.unix_timestamp to be valid date"),
-            location,
-            Service::Storage,
-            RequestType::Goog4Request,
-        )
-        .map_err(ErrorKind::CredentialScope)?;
         add_signed_url_required_query_string_parameters(
             &mut request,
             service_account_client_email,
             active_datetime,
-            &credential_scope,
+            credential_scope,
             expiration,
         )?;
         let canonical_query_string = canonical_query_string(&request);

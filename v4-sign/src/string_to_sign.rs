@@ -10,7 +10,7 @@ impl StringToSign {
     pub fn new(
         signing_algorithm: SigningAlgorithm,
         active_datetime: ActiveDatetime,
-        credential_scope: CredentialScope,
+        credential_scope: &CredentialScope,
         canonical_request: CanonicalRequest,
     ) -> Self {
         let hashed_canonical_request = sha256::digest(canonical_request.to_string());

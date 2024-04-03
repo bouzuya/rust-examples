@@ -30,6 +30,8 @@ pub struct Error(#[from] ErrorKind);
 #[derive(Debug, thiserror::Error)]
 enum ErrorKind {
     #[error(transparent)]
+    CredentialScope(#[from] crate::credential_scope::Error),
+    #[error(transparent)]
     Expiration(crate::expiration::Error),
     #[error(transparent)]
     File(std::io::Error),
@@ -83,8 +85,15 @@ pub fn signed_url(
         .body(())
         .map_err(ErrorKind::HttpRequest)?;
     let signed_url = SignedUrl::new(
+        &CredentialScope::new(
+            Date::from_unix_timestamp(active_datetime.unix_timestamp())
+                .expect("active_datetime.unix_timestamp to be valid date"),
+            Location::try_from(region).map_err(ErrorKind::Location)?,
+            Service::Storage,
+            RequestType::Goog4Request,
+        )
+        .map_err(ErrorKind::CredentialScope)?,
         active_datetime,
-        Location::try_from(region).map_err(ErrorKind::Location)?,
         Expiration::try_from(expiration).map_err(ErrorKind::Expiration)?,
         &service_account_client_email,
         &service_account_private_key,
