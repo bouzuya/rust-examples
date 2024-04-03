@@ -159,7 +159,7 @@ pub(crate) fn sign(
 
 #[cfg(test)]
 mod tests {
-    use crate::{date::Date, private::UnixTimestamp};
+    use crate::{date::Date, private::UnixTimestamp, Location, RequestType, Service};
 
     use super::*;
 
