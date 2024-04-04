@@ -10,7 +10,7 @@ pub struct Error(#[from] ErrorKind);
 enum ErrorKind {
     // TODO:
     #[error("invalid format or out of range")]
-    InvalidFormatOrOutOfRange(#[from] crate::private::Error),
+    InvalidFormatOrOutOfRange(#[from] crate::private::unix_timestamp::Error),
 }
 
 // <del>YYYYMMDD'T'HHMMSS'Z'</del>
