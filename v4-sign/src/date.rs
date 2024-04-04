@@ -16,6 +16,10 @@ enum ErrorKind {
 pub struct Date(u32);
 
 impl Date {
+    pub(crate) fn from_unix_timestamp_obj(unix_timestamp: UnixTimestamp) -> Self {
+        Self(unix_timestamp.to_date())
+    }
+
     pub fn from_unix_timestamp(unix_timestamp: i64) -> Result<Self, Error> {
         Ok(UnixTimestamp::try_from(unix_timestamp)
             .map(|unix_timestamp| Self(unix_timestamp.to_date()))

@@ -69,8 +69,9 @@ mod tests {
         fn assert_impls<T: Clone + std::fmt::Debug + std::fmt::Display + Eq + PartialEq>() {}
         assert_impls::<CredentialScope>();
 
-        let unix_timestamp = i64::from(UnixTimestamp::from_rfc3339("2020-01-02T03:04:05+00:00")?);
-        let date1 = Date::from_unix_timestamp(unix_timestamp)?;
+        let date1 = Date::from_unix_timestamp_obj(UnixTimestamp::from_rfc3339(
+            "2020-01-02T03:04:05+00:00",
+        )?);
         let location1 = Location::try_from("us-east1")?;
         assert_eq!(
             CredentialScope::new(

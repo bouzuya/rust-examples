@@ -21,6 +21,10 @@ impl ActiveDatetime {
     pub(crate) fn unix_timestamp(&self) -> i64 {
         i64::from(self.0)
     }
+
+    pub(crate) fn unix_timestamp_obj(&self) -> UnixTimestamp {
+        self.0
+    }
 }
 
 impl std::fmt::Display for ActiveDatetime {

@@ -85,8 +85,7 @@ pub fn html_form_params(
     let active_datetime = ActiveDatetime::now();
 
     let credential_scope = CredentialScope::new(
-        Date::from_unix_timestamp(active_datetime.unix_timestamp())
-            .expect("active_datetime.unix_timestamp to be valid date"),
+        Date::from_unix_timestamp_obj(active_datetime.unix_timestamp_obj()),
         Location::try_from(region).map_err(ErrorKind::Location)?,
         Service::Storage,
         RequestType::Goog4Request,
@@ -121,12 +120,10 @@ pub fn html_form_params(
             // `x-goog-signature` field is not included in the policy document
             // `file` field is not included in the policy document
         ],
-        expiration: policy_document::Expiration::from_str(
-            &UnixTimestamp::try_from(active_datetime.unix_timestamp() + expiration)
-                .map_err(|_| ErrorKind::ExpirationOutOfRange)?
-                .to_rfc3339(),
-        )
-        .expect("timestamp to be valid expiration"),
+        expiration: policy_document::Expiration::from_unix_timestamp_obj(
+            UnixTimestamp::try_from(active_datetime.unix_timestamp() + expiration)
+                .map_err(|_| ErrorKind::ExpirationOutOfRange)?,
+        ),
     };
     let policy =
         serde_json::to_string(&policy_document).map_err(|_| ErrorKind::PolicyDocumentEncoding)?;
@@ -182,8 +179,7 @@ pub fn signed_url(
         .body(())
         .map_err(ErrorKind::HttpRequest)?;
     let credential_scope = CredentialScope::new(
-        Date::from_unix_timestamp(active_datetime.unix_timestamp())
-            .expect("active_datetime.unix_timestamp to be valid date"),
+        Date::from_unix_timestamp_obj(active_datetime.unix_timestamp_obj()),
         Location::try_from(region).map_err(ErrorKind::Location)?,
         Service::Storage,
         RequestType::Goog4Request,

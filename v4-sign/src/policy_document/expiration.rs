@@ -18,6 +18,12 @@ enum ErrorKind {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Expiration(UnixTimestamp);
 
+impl Expiration {
+    pub(crate) fn from_unix_timestamp_obj(unix_timestamp: UnixTimestamp) -> Self {
+        Self(unix_timestamp)
+    }
+}
+
 impl std::fmt::Display for Expiration {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         self.0.to_rfc3339().fmt(f)
