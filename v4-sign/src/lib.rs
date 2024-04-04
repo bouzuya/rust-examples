@@ -12,21 +12,16 @@ mod signed_url;
 mod signing_algorithm;
 mod string_to_sign;
 
-use std::str::FromStr;
-
-use active_datetime::ActiveDatetime;
-use expiration::Expiration;
-use private::UnixTimestamp;
-use signed_url::{hex_encode, SignedUrl};
-
-use crate::signed_url::sign;
-
-pub use self::credential_scope::CredentialScope;
-pub use self::date::Date;
-pub use self::location::Location;
-pub use self::request_type::RequestType;
-pub use self::service::Service;
-pub use self::signing_algorithm::SigningAlgorithm;
+use self::active_datetime::ActiveDatetime;
+use self::credential_scope::CredentialScope;
+use self::date::Date;
+use self::expiration::Expiration;
+use self::location::Location;
+use self::private::UnixTimestamp;
+use self::request_type::RequestType;
+use self::service::Service;
+use self::signed_url::{hex_encode, sign, SignedUrl};
+use self::signing_algorithm::SigningAlgorithm;
 
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]
