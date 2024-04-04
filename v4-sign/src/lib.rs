@@ -3,6 +3,7 @@ mod canonical_request;
 mod credential_scope;
 mod date;
 mod expiration;
+mod http_verb;
 mod location;
 pub mod policy_document;
 mod private;
@@ -11,6 +12,10 @@ mod service;
 mod signed_url;
 mod signing_algorithm;
 mod string_to_sign;
+
+use std::str::FromStr;
+
+use http_verb::HttpVerb;
 
 use self::active_datetime::ActiveDatetime;
 use self::credential_scope::CredentialScope;
@@ -40,7 +45,7 @@ enum ErrorKind {
     #[error(transparent)]
     Field(crate::policy_document::field::Error),
     #[error(transparent)]
-    HttpMethod(http::method::InvalidMethod),
+    HttpMethod(crate::http_verb::Error),
     #[error(transparent)]
     HttpRequest(http::Error),
     #[error("invalid json")]
@@ -153,9 +158,10 @@ pub fn signed_url(
 ) -> Result<String, Error> {
     let active_datetime = ActiveDatetime::now();
 
+    let http_method = HttpVerb::from_str(http_method).map_err(ErrorKind::HttpMethod)?;
     let request = http::Request::builder()
         .header("Host", "storage.googleapis.com")
-        .method(http::Method::try_from(http_method).map_err(ErrorKind::HttpMethod)?)
+        .method(http::Method::from(http_method))
         .uri(
             format!(
                 "https://storage.googleapis.com/{}/{}",
