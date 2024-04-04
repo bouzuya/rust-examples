@@ -5,11 +5,12 @@ use v4_sign::BuildSignedUrlOptions;
 async fn test_html_form() -> anyhow::Result<()> {
     use v4_sign::build_signed_url;
     use v4_sign::html_form_params;
-    use v4_sign::load_service_account_credentials;
+    use v4_sign::ServiceAccountCredentials;
 
-    let google_application_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?;
-    let (service_account_client_email, service_account_private_key) =
-        load_service_account_credentials(google_application_credentials.as_str())?;
+    let ServiceAccountCredentials {
+        client_email: service_account_client_email,
+        private_key: service_account_private_key,
+    } = ServiceAccountCredentials::load(std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?)?;
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "foo";
     let region = std::env::var("REGION")?;
@@ -63,15 +64,16 @@ async fn test_html_form() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_setup_a_txt() -> anyhow::Result<()> {
     use v4_sign::build_signed_url;
-    use v4_sign::load_service_account_credentials;
+    use v4_sign::ServiceAccountCredentials;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "a.txt";
     let region = std::env::var("REGION")?;
 
-    let google_application_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?;
-    let (service_account_client_email, service_account_private_key) =
-        load_service_account_credentials(google_application_credentials.as_str())?;
+    let ServiceAccountCredentials {
+        client_email: service_account_client_email,
+        private_key: service_account_private_key,
+    } = ServiceAccountCredentials::load(std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?)?;
     let url = build_signed_url(BuildSignedUrlOptions {
         service_account_client_email: service_account_client_email.clone(),
         service_account_private_key: service_account_private_key.clone(),
@@ -114,15 +116,16 @@ async fn test_setup_a_txt() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_get() -> anyhow::Result<()> {
     use v4_sign::build_signed_url;
-    use v4_sign::load_service_account_credentials;
+    use v4_sign::ServiceAccountCredentials;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "a.txt";
     let region = std::env::var("REGION")?;
 
-    let google_application_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?;
-    let (service_account_client_email, service_account_private_key) =
-        load_service_account_credentials(google_application_credentials.as_str())?;
+    let ServiceAccountCredentials {
+        client_email: service_account_client_email,
+        private_key: service_account_private_key,
+    } = ServiceAccountCredentials::load(std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?)?;
     let signed_url = build_signed_url(BuildSignedUrlOptions {
         service_account_client_email,
         service_account_private_key,
@@ -144,15 +147,16 @@ async fn test_get() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_get_timeout() -> anyhow::Result<()> {
     use v4_sign::build_signed_url;
-    use v4_sign::load_service_account_credentials;
+    use v4_sign::ServiceAccountCredentials;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "a.txt";
     let region = std::env::var("REGION")?;
 
-    let google_application_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?;
-    let (service_account_client_email, service_account_private_key) =
-        load_service_account_credentials(google_application_credentials.as_str())?;
+    let ServiceAccountCredentials {
+        client_email: service_account_client_email,
+        private_key: service_account_private_key,
+    } = ServiceAccountCredentials::load(std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?)?;
     let signed_url = build_signed_url(BuildSignedUrlOptions {
         service_account_client_email,
         service_account_private_key,
@@ -175,15 +179,16 @@ async fn test_get_timeout() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_post_invalid_http_method() -> anyhow::Result<()> {
     use v4_sign::build_signed_url;
-    use v4_sign::load_service_account_credentials;
+    use v4_sign::ServiceAccountCredentials;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "a.txt";
     let region = std::env::var("REGION")?;
 
-    let google_application_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?;
-    let (service_account_client_email, service_account_private_key) =
-        load_service_account_credentials(google_application_credentials.as_str())?;
+    let ServiceAccountCredentials {
+        client_email: service_account_client_email,
+        private_key: service_account_private_key,
+    } = ServiceAccountCredentials::load(std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?)?;
     let signed_url = build_signed_url(BuildSignedUrlOptions {
         service_account_client_email,
         service_account_private_key,
@@ -204,15 +209,16 @@ async fn test_post_invalid_http_method() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_post() -> anyhow::Result<()> {
     use v4_sign::build_signed_url;
-    use v4_sign::load_service_account_credentials;
+    use v4_sign::ServiceAccountCredentials;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "b.txt";
     let region = std::env::var("REGION")?;
 
-    let google_application_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?;
-    let (service_account_client_email, service_account_private_key) =
-        load_service_account_credentials(google_application_credentials.as_str())?;
+    let ServiceAccountCredentials {
+        client_email: service_account_client_email,
+        private_key: service_account_private_key,
+    } = ServiceAccountCredentials::load(std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?)?;
     let url = build_signed_url(BuildSignedUrlOptions {
         service_account_client_email: service_account_client_email.clone(),
         service_account_private_key: service_account_private_key.clone(),
@@ -249,15 +255,16 @@ async fn test_post() -> anyhow::Result<()> {
 #[tokio::test]
 async fn test_post_bin() -> anyhow::Result<()> {
     use v4_sign::build_signed_url;
-    use v4_sign::load_service_account_credentials;
+    use v4_sign::ServiceAccountCredentials;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "c.png";
     let region = std::env::var("REGION")?;
 
-    let google_application_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?;
-    let (service_account_client_email, service_account_private_key) =
-        load_service_account_credentials(google_application_credentials.as_str())?;
+    let ServiceAccountCredentials {
+        client_email: service_account_client_email,
+        private_key: service_account_private_key,
+    } = ServiceAccountCredentials::load(std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?)?;
     let url = build_signed_url(BuildSignedUrlOptions {
         service_account_client_email: service_account_client_email.clone(),
         service_account_private_key: service_account_private_key.clone(),
