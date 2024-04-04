@@ -78,7 +78,6 @@ pub fn html_form_params(
         load_service_account_credentials(google_application_credentials.as_str())?;
     let active_datetime = ActiveDatetime::now();
 
-    let key = object_name.strip_prefix('/').unwrap();
     let credential_scope = CredentialScope::new(
         Date::from_unix_timestamp(active_datetime.unix_timestamp())
             .expect("active_datetime.unix_timestamp to be valid date"),
@@ -98,7 +97,7 @@ pub fn html_form_params(
             ),
             policy_document::Condition::ExactMatching(
                 policy_document::Field::new("key").map_err(ErrorKind::Field)?,
-                policy_document::Value::new(key),
+                policy_document::Value::new(object_name),
             ),
             // `policy` field is not included in the policy document
             policy_document::Condition::ExactMatching(
@@ -137,7 +136,7 @@ pub fn html_form_params(
 
     Ok(vec![
         ("bucket", bucket_name.to_string()),
-        ("key", key.to_string()),
+        ("key", object_name.to_string()),
         ("policy", encoded_policy),
         ("x-goog-algorithm", x_goog_algorithm.as_ref().to_string()),
         ("x-goog-credential", x_goog_credential),
@@ -165,7 +164,7 @@ pub fn signed_url(
         .method(http::Method::try_from(http_method).map_err(ErrorKind::HttpMethod)?)
         .uri(
             format!(
-                "https://storage.googleapis.com/{}{}",
+                "https://storage.googleapis.com/{}/{}",
                 // TODO: escape bucket_name and object_name
                 bucket_name,
                 object_name

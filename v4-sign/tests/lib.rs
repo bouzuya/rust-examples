@@ -45,7 +45,7 @@ async fn test_html_form() -> anyhow::Result<()> {
     use v4_sign::signed_url;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
-    let object_name = "/foo";
+    let object_name = "foo";
     let region = std::env::var("REGION")?;
 
     let form_params = html_form_params(&bucket_name, object_name, &region, 2)?;
@@ -84,7 +84,7 @@ async fn test_setup_a_txt() -> anyhow::Result<()> {
     use v4_sign::signed_url;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
-    let object_name = "/a.txt";
+    let object_name = "a.txt";
     let region = std::env::var("REGION")?;
 
     let url = signed_url(&bucket_name, object_name, &region, 2, "POST")?;
@@ -115,7 +115,7 @@ async fn test_get() -> anyhow::Result<()> {
     use v4_sign::signed_url;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
-    let object_name = "/a.txt";
+    let object_name = "a.txt";
     let region = std::env::var("REGION")?;
 
     let signed_url = signed_url(&bucket_name, object_name, &region, 2, "GET")?;
@@ -133,7 +133,7 @@ async fn test_get_timeout() -> anyhow::Result<()> {
     use v4_sign::signed_url;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
-    let object_name = "/a.txt";
+    let object_name = "a.txt";
     let region = std::env::var("REGION")?;
 
     let signed_url = signed_url(&bucket_name, object_name, &region, 1, "GET")?;
@@ -152,7 +152,7 @@ async fn test_post_invalid_http_method() -> anyhow::Result<()> {
     use v4_sign::signed_url;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
-    let object_name = "/a.txt";
+    let object_name = "a.txt";
     let region = std::env::var("REGION")?;
 
     let signed_url = signed_url(&bucket_name, object_name, &region, 2, "POST")?;
@@ -169,7 +169,7 @@ async fn test_post() -> anyhow::Result<()> {
     use v4_sign::signed_url;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
-    let object_name = "/b.txt";
+    let object_name = "b.txt";
     let region = std::env::var("REGION")?;
 
     let url = signed_url(&bucket_name, object_name, &region, 2, "POST")?;
@@ -194,7 +194,7 @@ async fn test_post_bin() -> anyhow::Result<()> {
     use v4_sign::signed_url;
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
-    let object_name = "/c.png";
+    let object_name = "c.png";
     let region = std::env::var("REGION")?;
 
     let url = signed_url(&bucket_name, object_name, &region, 2, "POST")?;
