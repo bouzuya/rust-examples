@@ -1,33 +1,21 @@
-mod active_datetime;
-mod canonical_request;
-mod credential_scope;
-mod date;
-mod expiration;
-mod http_verb;
-mod location;
-pub mod policy_document;
 mod private;
-mod request_type;
-mod service;
 mod service_account_credentials;
-mod signed_url;
-mod signing_algorithm;
-mod string_to_sign;
 
 use std::str::FromStr;
 
-use http_verb::HttpVerb;
+use private::policy_document;
 
-use self::active_datetime::ActiveDatetime;
-use self::credential_scope::CredentialScope;
-use self::date::Date;
-use self::expiration::Expiration;
-use self::location::Location;
-use self::private::UnixTimestamp;
-use self::request_type::RequestType;
-use self::service::Service;
-use self::signed_url::{hex_encode, sign, SignedUrl};
-use self::signing_algorithm::SigningAlgorithm;
+use self::private::utils::UnixTimestamp;
+use self::private::ActiveDatetime;
+use self::private::CredentialScope;
+use self::private::Date;
+use self::private::Expiration;
+use self::private::HttpVerb;
+use self::private::Location;
+use self::private::RequestType;
+use self::private::Service;
+use self::private::SigningAlgorithm;
+use self::private::{hex_encode, sign, SignedUrl};
 
 pub use self::service_account_credentials::ServiceAccountCredentials;
 
@@ -38,23 +26,23 @@ pub struct Error(#[from] ErrorKind);
 #[derive(Debug, thiserror::Error)]
 enum ErrorKind {
     #[error(transparent)]
-    CredentialScope(#[from] crate::credential_scope::Error),
+    CredentialScope(#[from] crate::private::credential_scope::Error),
     #[error(transparent)]
-    Expiration(crate::expiration::Error),
+    Expiration(crate::private::expiration::Error),
     #[error("expiration out of range")]
     ExpirationOutOfRange,
     #[error(transparent)]
     File(std::io::Error),
     #[error(transparent)]
-    Field(crate::policy_document::field::Error),
+    Field(crate::private::policy_document::field::Error),
     #[error(transparent)]
-    HttpMethod(crate::http_verb::Error),
+    HttpMethod(crate::private::http_verb::Error),
     #[error(transparent)]
     HttpRequest(http::Error),
     #[error("invalid json")]
     InvalidServiceAccountJson(serde_json::Error),
     #[error(transparent)]
-    Location(crate::location::Error),
+    Location(crate::private::location::Error),
     #[error("pem")]
     Pem,
     #[error("policy document encoding")]
@@ -70,7 +58,7 @@ enum ErrorKind {
     #[error("private_key is not string")]
     ServiceAccountJsonPrivateKeyIsNotString,
     #[error(transparent)]
-    SignedUrl(crate::signed_url::Error),
+    SignedUrl(crate::private::signed_url::Error),
 }
 
 pub fn html_form_params(

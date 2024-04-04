@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::private::UnixTimestamp;
+use crate::private::utils::UnixTimestamp;
 
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]
@@ -10,7 +10,7 @@ pub struct Error(#[from] ErrorKind);
 enum ErrorKind {
     // TODO:
     #[error("invalid format or out of range")]
-    InvalidFormatOrOutOfRange(#[from] crate::private::unix_timestamp::Error),
+    InvalidFormatOrOutOfRange(#[from] crate::private::utils::unix_timestamp::Error),
 }
 
 // <del>YYYYMMDD'T'HHMMSS'Z'</del>

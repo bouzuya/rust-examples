@@ -1,4 +1,4 @@
-use crate::{
+use super::{
     active_datetime::ActiveDatetime, canonical_request::CanonicalRequest,
     credential_scope::CredentialScope, signing_algorithm::SigningAlgorithm,
 };

@@ -1,11 +1,11 @@
 use std::{collections::BTreeSet, vec};
 
-use crate::active_datetime::ActiveDatetime;
-use crate::canonical_request::{canonical_query_string, CanonicalRequest};
-use crate::credential_scope::CredentialScope;
-use crate::expiration::Expiration;
-use crate::signing_algorithm::SigningAlgorithm;
-use crate::string_to_sign::StringToSign;
+use super::ActiveDatetime;
+use super::CredentialScope;
+use super::Expiration;
+use super::SigningAlgorithm;
+use super::StringToSign;
+use super::{canonical_query_string, CanonicalRequest};
 
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]
@@ -14,7 +14,7 @@ pub struct Error(#[from] ErrorKind);
 #[derive(Debug, thiserror::Error)]
 enum ErrorKind {
     #[error(transparent)]
-    CanonicalRequest(crate::canonical_request::Error),
+    CanonicalRequest(crate::private::canonical_request::Error),
     #[error("host header not found")]
     HostHeaderNotFound,
     #[error("pem key rejected: {0}")]
@@ -154,7 +154,7 @@ pub(crate) fn sign(
 
 #[cfg(test)]
 mod tests {
-    use crate::{date::Date, private::UnixTimestamp, Location, RequestType, Service};
+    use crate::private::{utils::UnixTimestamp, Date, Location, RequestType, Service};
 
     use super::*;
 

@@ -1,6 +1,6 @@
 // <https://cloud.google.com/storage/docs/authentication/signatures#credential-scope>
 
-use crate::{date::Date, location::Location, request_type::RequestType, service::Service};
+use crate::private::{Date, Location, RequestType, Service};
 
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]
@@ -60,7 +60,7 @@ impl std::fmt::Display for CredentialScope {
 
 #[cfg(test)]
 mod tests {
-    use crate::private::UnixTimestamp;
+    use crate::private::utils::UnixTimestamp;
 
     use super::*;
 
