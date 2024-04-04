@@ -39,8 +39,6 @@ enum ErrorKind {
     File(std::io::Error),
     #[error(transparent)]
     Field(crate::policy_document::field::Error),
-    #[error("env var GOOGLE_APPLICATION_CREDENTIALS is not found")]
-    GoogleApplicationCredentialsNotFound,
     #[error(transparent)]
     HttpMethod(http::method::InvalidMethod),
     #[error(transparent)]
@@ -68,15 +66,13 @@ enum ErrorKind {
 }
 
 pub fn html_form_params(
+    service_account_client_email: &str,
+    service_account_private_key: &str,
     bucket_name: &str,
     object_name: &str,
     region: &str,
     expiration: i64,
 ) -> Result<Vec<(&'static str, String)>, Error> {
-    let google_application_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS")
-        .map_err(|_| ErrorKind::GoogleApplicationCredentialsNotFound)?;
-    let (service_account_client_email, service_account_private_key) =
-        load_service_account_credentials(google_application_credentials.as_str())?;
     let active_datetime = ActiveDatetime::now();
 
     let credential_scope = CredentialScope::new(
@@ -147,16 +143,14 @@ pub fn html_form_params(
 
 // FIXME: signature
 pub fn signed_url(
+    service_account_client_email: &str,
+    service_account_private_key: &str,
     bucket_name: &str,
     object_name: &str,
     region: &str,
     expiration: i64,
     http_method: &str,
 ) -> Result<String, Error> {
-    let google_application_credentials = std::env::var("GOOGLE_APPLICATION_CREDENTIALS")
-        .map_err(|_| ErrorKind::GoogleApplicationCredentialsNotFound)?;
-    let (service_account_client_email, service_account_private_key) =
-        load_service_account_credentials(google_application_credentials.as_str())?;
     let active_datetime = ActiveDatetime::now();
 
     let request = http::Request::builder()
@@ -184,15 +178,15 @@ pub fn signed_url(
         &credential_scope,
         active_datetime,
         Expiration::try_from(expiration).map_err(ErrorKind::Expiration)?,
-        &service_account_client_email,
-        &service_account_private_key,
+        service_account_client_email,
+        service_account_private_key,
         request,
     )
     .map_err(ErrorKind::SignedUrl)?;
     Ok(String::from(signed_url))
 }
 
-fn load_service_account_credentials(
+pub fn load_service_account_credentials(
     google_application_credentials: &str,
 ) -> Result<(String, String), Error> {
     let path = google_application_credentials;
