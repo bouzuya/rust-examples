@@ -147,18 +147,29 @@ pub fn html_form_params(
 }
 
 // FIXME: signature
-pub fn signed_url(
-    service_account_client_email: &str,
-    service_account_private_key: &str,
-    bucket_name: &str,
-    object_name: &str,
-    region: &str,
-    expiration: i64,
-    http_method: &str,
+pub struct BuildSignedUrlOptions {
+    pub service_account_client_email: String,
+    pub service_account_private_key: String,
+    pub bucket_name: String,
+    pub object_name: String,
+    pub region: String,
+    pub expiration: i64,
+    pub http_method: String,
+}
+pub fn build_signed_url(
+    BuildSignedUrlOptions {
+        service_account_client_email,
+        service_account_private_key,
+        bucket_name,
+        object_name,
+        region,
+        expiration,
+        http_method,
+    }: BuildSignedUrlOptions,
 ) -> Result<String, Error> {
     let active_datetime = ActiveDatetime::now();
 
-    let http_method = HttpVerb::from_str(http_method).map_err(ErrorKind::HttpMethod)?;
+    let http_method = HttpVerb::from_str(http_method.as_str()).map_err(ErrorKind::HttpMethod)?;
     let request = http::Request::builder()
         .header("Host", "storage.googleapis.com")
         .method(http::Method::from(http_method))
@@ -175,7 +186,7 @@ pub fn signed_url(
         .map_err(ErrorKind::HttpRequest)?;
     let credential_scope = CredentialScope::new(
         Date::from_unix_timestamp_obj(active_datetime.unix_timestamp_obj()),
-        Location::try_from(region).map_err(ErrorKind::Location)?,
+        Location::try_from(region.as_str()).map_err(ErrorKind::Location)?,
         Service::Storage,
         RequestType::Goog4Request,
     )
@@ -184,8 +195,8 @@ pub fn signed_url(
         &credential_scope,
         active_datetime,
         Expiration::try_from(expiration).map_err(ErrorKind::Expiration)?,
-        service_account_client_email,
-        service_account_private_key,
+        &service_account_client_email,
+        &service_account_private_key,
         request,
     )
     .map_err(ErrorKind::SignedUrl)?;
