@@ -9,6 +9,7 @@ pub mod policy_document;
 mod private;
 mod request_type;
 mod service;
+mod service_account_credentials;
 mod signed_url;
 mod signing_algorithm;
 mod string_to_sign;
@@ -27,6 +28,8 @@ use self::request_type::RequestType;
 use self::service::Service;
 use self::signed_url::{hex_encode, sign, SignedUrl};
 use self::signing_algorithm::SigningAlgorithm;
+
+pub use self::service_account_credentials::ServiceAccountCredentials;
 
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]
@@ -201,38 +204,4 @@ pub fn build_signed_url(
     )
     .map_err(ErrorKind::SignedUrl)?;
     Ok(String::from(signed_url))
-}
-
-pub struct ServiceAccountCredentials {
-    pub client_email: String,
-    pub private_key: String,
-}
-
-impl ServiceAccountCredentials {
-    pub fn load<P: AsRef<std::path::Path>>(path: P) -> Result<Self, Error> {
-        let mut file = std::fs::File::open(path).map_err(ErrorKind::File)?;
-        let mut s = String::new();
-        std::io::Read::read_to_string(&mut file, &mut s).map_err(ErrorKind::File)?;
-        let json_value: serde_json::Value =
-            serde_json::from_str(s.as_str()).map_err(ErrorKind::InvalidServiceAccountJson)?;
-        let json_object = json_value
-            .as_object()
-            .ok_or_else(|| ErrorKind::ServiceAccountJsonRootIsNotObject)?;
-        let client_email = json_object
-            .get("client_email")
-            .ok_or_else(|| ErrorKind::ServiceAccountJsonClientEmailIsNotFound)?
-            .as_str()
-            .ok_or_else(|| ErrorKind::ServiceAccountJsonClientEmailIsNotString)?
-            .to_string();
-        let private_key = json_object
-            .get("private_key")
-            .ok_or_else(|| ErrorKind::ServiceAccountJsonPrivateKeyIsNotFound)?
-            .as_str()
-            .ok_or_else(|| ErrorKind::ServiceAccountJsonPrivateKeyIsNotString)?
-            .to_string();
-        Ok(Self {
-            client_email,
-            private_key,
-        })
-    }
 }
