@@ -38,6 +38,8 @@ enum ErrorKind {
     CredentialScope(#[from] crate::credential_scope::Error),
     #[error(transparent)]
     Expiration(crate::expiration::Error),
+    #[error("expiration out of range")]
+    ExpirationOutOfRange,
     #[error(transparent)]
     File(std::io::Error),
     #[error(transparent)]
@@ -52,6 +54,10 @@ enum ErrorKind {
     InvalidServiceAccountJson(serde_json::Error),
     #[error(transparent)]
     Location(crate::location::Error),
+    #[error("pem")]
+    Pem,
+    #[error("policy document encoding")]
+    PolicyDocumentEncoding,
     #[error("client_email is not found")]
     ServiceAccountJsonClientEmailIsNotFound,
     #[error("client_email is not string")]
@@ -117,21 +123,23 @@ pub fn html_form_params(
         ],
         expiration: policy_document::Expiration::from_str(
             &UnixTimestamp::try_from(active_datetime.unix_timestamp() + expiration)
-                .unwrap()
+                .map_err(|_| ErrorKind::ExpirationOutOfRange)?
                 .to_rfc3339(),
         )
-        .unwrap(),
+        .expect("timestamp to be valid expiration"),
     };
-    let policy = serde_json::to_string(&policy_document).unwrap();
+    let policy =
+        serde_json::to_string(&policy_document).map_err(|_| ErrorKind::PolicyDocumentEncoding)?;
     let encoded_policy = base64::Engine::encode(
         &base64::engine::general_purpose::STANDARD,
         policy.as_bytes(),
     );
 
     let message = encoded_policy.as_str();
-    let pkcs8 = pem::parse(service_account_private_key.as_bytes()).unwrap();
+    let pkcs8 = pem::parse(service_account_private_key.as_bytes()).map_err(|_| ErrorKind::Pem)?;
     let signing_key = pkcs8.contents();
-    let message_digest = sign(x_goog_algorithm, signing_key, message.as_bytes()).unwrap();
+    let message_digest =
+        sign(x_goog_algorithm, signing_key, message.as_bytes()).map_err(ErrorKind::SignedUrl)?;
     let request_signature = hex_encode(&message_digest);
 
     Ok(vec![

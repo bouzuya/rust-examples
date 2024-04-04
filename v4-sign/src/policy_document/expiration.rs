@@ -88,7 +88,7 @@ mod tests {
         assert_impls::<Expiration>();
 
         let s = "2020-06-16T11:11:11Z";
-        let expiration = Expiration::from_str(s).unwrap();
+        let expiration = Expiration::from_str(s)?;
         assert_eq!(expiration.to_string(), s);
         assert_eq!(
             serde_json::from_str::<Expiration>(&format!("\"{}\"", s))?,
