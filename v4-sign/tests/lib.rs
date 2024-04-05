@@ -13,14 +13,13 @@ async fn test_build_html_form_data() -> anyhow::Result<()> {
     } = ServiceAccountCredentials::load(std::env::var("GOOGLE_APPLICATION_CREDENTIALS")?)?;
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "foo";
-    let region = std::env::var("REGION")?;
 
     let form_params = build_html_form_data(BuildHtmlFormDataOptions {
         service_account_client_email: service_account_client_email.clone(),
         service_account_private_key: service_account_private_key.clone(),
         bucket_name: bucket_name.clone(),
         object_name: object_name.to_string(),
-        region: region.clone(),
+        region: None,
         expiration: 2,
         now: None,
     })?;
@@ -47,7 +46,7 @@ async fn test_build_html_form_data() -> anyhow::Result<()> {
         service_account_private_key,
         bucket_name,
         object_name: object_name.to_string(),
-        region,
+        region: None,
         expiration: 2,
         http_method: "GET".to_string(),
         now: None,
@@ -70,7 +69,6 @@ async fn test_setup_a_txt() -> anyhow::Result<()> {
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "a.txt";
-    let region = std::env::var("REGION")?;
 
     let ServiceAccountCredentials {
         client_email: service_account_client_email,
@@ -81,7 +79,7 @@ async fn test_setup_a_txt() -> anyhow::Result<()> {
         service_account_private_key: service_account_private_key.clone(),
         bucket_name: bucket_name.clone(),
         object_name: object_name.to_string(),
-        region: region.clone(),
+        region: None,
         expiration: 2,
         http_method: "POST".to_string(),
         now: None,
@@ -101,7 +99,7 @@ async fn test_setup_a_txt() -> anyhow::Result<()> {
         service_account_private_key,
         bucket_name,
         object_name: object_name.to_string(),
-        region,
+        region: None,
         expiration: 2,
         http_method: "GET".to_string(),
         now: None,
@@ -124,7 +122,6 @@ async fn test_get() -> anyhow::Result<()> {
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "a.txt";
-    let region = std::env::var("REGION")?;
 
     let ServiceAccountCredentials {
         client_email: service_account_client_email,
@@ -135,7 +132,7 @@ async fn test_get() -> anyhow::Result<()> {
         service_account_private_key,
         bucket_name,
         object_name: object_name.to_string(),
-        region,
+        region: None,
         expiration: 2,
         http_method: "GET".to_string(),
         now: None,
@@ -156,7 +153,6 @@ async fn test_get_timeout() -> anyhow::Result<()> {
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "a.txt";
-    let region = std::env::var("REGION")?;
 
     let ServiceAccountCredentials {
         client_email: service_account_client_email,
@@ -167,7 +163,7 @@ async fn test_get_timeout() -> anyhow::Result<()> {
         service_account_private_key,
         bucket_name,
         object_name: object_name.to_string(),
-        region,
+        region: None,
         expiration: 1,
         http_method: "GET".to_string(),
         now: None,
@@ -189,7 +185,6 @@ async fn test_post_invalid_http_method() -> anyhow::Result<()> {
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "a.txt";
-    let region = std::env::var("REGION")?;
 
     let ServiceAccountCredentials {
         client_email: service_account_client_email,
@@ -200,7 +195,7 @@ async fn test_post_invalid_http_method() -> anyhow::Result<()> {
         service_account_private_key,
         bucket_name,
         object_name: object_name.to_string(),
-        region,
+        region: None,
         expiration: 2,
         http_method: "POST".to_string(),
         now: None,
@@ -220,7 +215,6 @@ async fn test_post() -> anyhow::Result<()> {
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "b.txt";
-    let region = std::env::var("REGION")?;
 
     let ServiceAccountCredentials {
         client_email: service_account_client_email,
@@ -231,7 +225,7 @@ async fn test_post() -> anyhow::Result<()> {
         service_account_private_key: service_account_private_key.clone(),
         bucket_name: bucket_name.clone(),
         object_name: object_name.to_string(),
-        region: region.clone(),
+        region: None,
         expiration: 2,
         http_method: "POST".to_string(),
         now: None,
@@ -248,7 +242,7 @@ async fn test_post() -> anyhow::Result<()> {
         service_account_private_key,
         bucket_name,
         object_name: object_name.to_string(),
-        region,
+        region: None,
         expiration: 2,
         http_method: "GET".to_string(),
         now: None,
@@ -268,7 +262,6 @@ async fn test_post_bin() -> anyhow::Result<()> {
 
     let bucket_name = std::env::var("BUCKET_NAME")?;
     let object_name = "c.png";
-    let region = std::env::var("REGION")?;
 
     let ServiceAccountCredentials {
         client_email: service_account_client_email,
@@ -279,7 +272,7 @@ async fn test_post_bin() -> anyhow::Result<()> {
         service_account_private_key: service_account_private_key.clone(),
         bucket_name: bucket_name.clone(),
         object_name: object_name.to_string(),
-        region: region.clone(),
+        region: None,
         expiration: 2,
         http_method: "POST".to_string(),
         now: None,
@@ -299,7 +292,7 @@ async fn test_post_bin() -> anyhow::Result<()> {
         service_account_private_key,
         bucket_name,
         object_name: object_name.to_string(),
-        region,
+        region: None,
         expiration: 2,
         http_method: "GET".to_string(),
         now: None,
