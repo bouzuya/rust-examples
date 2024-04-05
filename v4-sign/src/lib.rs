@@ -71,7 +71,7 @@ pub struct BuildHtmlFormDataOptions {
     pub object_name: String,
     pub region: String,
     pub expiration: i64,
-    pub now: SystemTime,
+    pub now: Option<SystemTime>,
 }
 
 pub fn build_html_form_data(
@@ -85,7 +85,8 @@ pub fn build_html_form_data(
         now,
     }: BuildHtmlFormDataOptions,
 ) -> Result<Vec<(&'static str, String)>, Error> {
-    let now = UnixTimestamp::from_system_time(now).map_err(|_| ErrorKind::Now)?;
+    let now = UnixTimestamp::from_system_time(now.unwrap_or_else(SystemTime::now))
+        .map_err(|_| ErrorKind::Now)?;
 
     let credential_scope = CredentialScope::new(
         Date::from_unix_timestamp_obj(now),
@@ -162,7 +163,7 @@ pub struct BuildSignedUrlOptions {
     pub region: String,
     pub expiration: u32,
     pub http_method: String,
-    pub now: SystemTime,
+    pub now: Option<SystemTime>,
 }
 
 pub fn build_signed_url(
@@ -177,7 +178,8 @@ pub fn build_signed_url(
         now,
     }: BuildSignedUrlOptions,
 ) -> Result<String, Error> {
-    let now = UnixTimestamp::from_system_time(now).map_err(|_| ErrorKind::Now)?;
+    let now = UnixTimestamp::from_system_time(now.unwrap_or_else(SystemTime::now))
+        .map_err(|_| ErrorKind::Now)?;
 
     let http_method = HttpVerb::from_str(http_method.as_str()).map_err(ErrorKind::HttpMethod)?;
     let request = http::Request::builder()

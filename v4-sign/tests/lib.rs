@@ -1,5 +1,3 @@
-use std::time::SystemTime;
-
 use v4_sign::{BuildHtmlFormDataOptions, BuildSignedUrlOptions};
 
 #[ignore]
@@ -24,7 +22,7 @@ async fn test_build_html_form_data() -> anyhow::Result<()> {
         object_name: object_name.to_string(),
         region: region.clone(),
         expiration: 2,
-        now: SystemTime::now(),
+        now: None,
     })?;
     let client = reqwest::Client::new();
     let response = client
@@ -52,7 +50,7 @@ async fn test_build_html_form_data() -> anyhow::Result<()> {
         region,
         expiration: 2,
         http_method: "GET".to_string(),
-        now: SystemTime::now(),
+        now: None,
     })?;
     let response = reqwest::get(url).await?;
     assert_eq!(response.status().as_u16(), 200);
@@ -86,7 +84,7 @@ async fn test_setup_a_txt() -> anyhow::Result<()> {
         region: region.clone(),
         expiration: 2,
         http_method: "POST".to_string(),
-        now: SystemTime::now(),
+        now: None,
     })?;
     let client = reqwest::Client::new();
     let form = reqwest::multipart::Form::new()
@@ -106,7 +104,7 @@ async fn test_setup_a_txt() -> anyhow::Result<()> {
         region,
         expiration: 2,
         http_method: "GET".to_string(),
-        now: SystemTime::now(),
+        now: None,
     })?;
     let response = reqwest::get(url).await?;
     assert_eq!(response.status().as_u16(), 200);
@@ -140,7 +138,7 @@ async fn test_get() -> anyhow::Result<()> {
         region,
         expiration: 2,
         http_method: "GET".to_string(),
-        now: SystemTime::now(),
+        now: None,
     })?;
 
     let response = reqwest::get(signed_url).await?;
@@ -172,7 +170,7 @@ async fn test_get_timeout() -> anyhow::Result<()> {
         region,
         expiration: 1,
         http_method: "GET".to_string(),
-        now: SystemTime::now(),
+        now: None,
     })?;
 
     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
@@ -205,7 +203,7 @@ async fn test_post_invalid_http_method() -> anyhow::Result<()> {
         region,
         expiration: 2,
         http_method: "POST".to_string(),
-        now: SystemTime::now(),
+        now: None,
     })?;
 
     let response = reqwest::get(signed_url).await?;
@@ -236,7 +234,7 @@ async fn test_post() -> anyhow::Result<()> {
         region: region.clone(),
         expiration: 2,
         http_method: "POST".to_string(),
-        now: SystemTime::now(),
+        now: None,
     })?;
     let client = reqwest::Client::new();
     let form = reqwest::multipart::Form::new()
@@ -253,7 +251,7 @@ async fn test_post() -> anyhow::Result<()> {
         region,
         expiration: 2,
         http_method: "GET".to_string(),
-        now: SystemTime::now(),
+        now: None,
     })?;
     let response = reqwest::get(url).await?;
     assert_eq!(response.status().as_u16(), 200);
@@ -284,7 +282,7 @@ async fn test_post_bin() -> anyhow::Result<()> {
         region: region.clone(),
         expiration: 2,
         http_method: "POST".to_string(),
-        now: SystemTime::now(),
+        now: None,
     })?;
     let client = reqwest::Client::new();
     let form = reqwest::multipart::Form::new()
@@ -304,7 +302,7 @@ async fn test_post_bin() -> anyhow::Result<()> {
         region,
         expiration: 2,
         http_method: "GET".to_string(),
-        now: SystemTime::now(),
+        now: None,
     })?;
     let response = reqwest::get(url).await?;
     assert_eq!(response.status().as_u16(), 200);
