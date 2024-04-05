@@ -14,6 +14,10 @@ impl ActiveDatetime {
         ))
     }
 
+    pub(crate) fn from_unix_timestamp_obj(unix_timestamp: UnixTimestamp) -> Self {
+        Self(unix_timestamp)
+    }
+
     pub(crate) fn now() -> Self {
         Self(UnixTimestamp::now())
     }

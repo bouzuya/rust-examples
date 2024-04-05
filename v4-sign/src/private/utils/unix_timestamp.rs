@@ -1,3 +1,5 @@
+use std::time::SystemTime;
+
 #[derive(Debug, thiserror::Error)]
 #[error(transparent)]
 pub(crate) struct Error(#[from] ErrorKind);
@@ -27,6 +29,18 @@ impl UnixTimestamp {
         let chrono_date_time = chrono::DateTime::<chrono::FixedOffset>::parse_from_rfc3339(s)
             .map_err(|_| ErrorKind::InvalidRfc3339Format(s.to_string()))?;
         Self::try_from(chrono_date_time.timestamp())
+    }
+
+    pub(crate) fn from_system_time(system_time: SystemTime) -> Result<Self, Error> {
+        Self::try_from(
+            i64::try_from(
+                system_time
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .map_err(|_| ErrorKind::OutOfRange(0))?
+                    .as_secs(),
+            )
+            .map_err(|_| ErrorKind::OutOfRange(0))?,
+        )
     }
 
     pub(crate) fn now() -> Self {

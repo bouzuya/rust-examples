@@ -2,6 +2,7 @@ mod private;
 mod service_account_credentials;
 
 use std::str::FromStr;
+use std::time::SystemTime;
 
 use private::policy_document;
 
@@ -43,6 +44,8 @@ enum ErrorKind {
     InvalidServiceAccountJson(serde_json::Error),
     #[error(transparent)]
     Location(crate::private::location::Error),
+    #[error("now out of range")]
+    Now,
     #[error("pem")]
     Pem,
     #[error("policy document encoding")]
@@ -137,16 +140,18 @@ pub fn html_form_params(
     ])
 }
 
-// FIXME: signature
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct BuildSignedUrlOptions {
     pub service_account_client_email: String,
     pub service_account_private_key: String,
     pub bucket_name: String,
     pub object_name: String,
     pub region: String,
-    pub expiration: i64,
+    pub expiration: u32,
     pub http_method: String,
+    pub now: SystemTime,
 }
+
 pub fn build_signed_url(
     BuildSignedUrlOptions {
         service_account_client_email,
@@ -156,9 +161,10 @@ pub fn build_signed_url(
         region,
         expiration,
         http_method,
+        now,
     }: BuildSignedUrlOptions,
 ) -> Result<String, Error> {
-    let active_datetime = ActiveDatetime::now();
+    let now = UnixTimestamp::from_system_time(now).map_err(|_| ErrorKind::Now)?;
 
     let http_method = HttpVerb::from_str(http_method.as_str()).map_err(ErrorKind::HttpMethod)?;
     let request = http::Request::builder()
@@ -176,7 +182,7 @@ pub fn build_signed_url(
         .body(())
         .map_err(ErrorKind::HttpRequest)?;
     let credential_scope = CredentialScope::new(
-        Date::from_unix_timestamp_obj(active_datetime.unix_timestamp_obj()),
+        Date::from_unix_timestamp_obj(now),
         Location::try_from(region.as_str()).map_err(ErrorKind::Location)?,
         Service::Storage,
         RequestType::Goog4Request,
@@ -184,8 +190,8 @@ pub fn build_signed_url(
     .map_err(ErrorKind::CredentialScope)?;
     let signed_url = SignedUrl::new(
         &credential_scope,
-        active_datetime,
-        Expiration::try_from(expiration).map_err(ErrorKind::Expiration)?,
+        ActiveDatetime::from_unix_timestamp_obj(now),
+        Expiration::try_from(i64::from(expiration)).map_err(ErrorKind::Expiration)?,
         &service_account_client_email,
         &service_account_private_key,
         request,
