@@ -43,10 +43,6 @@ impl UnixTimestamp {
         )
     }
 
-    pub(crate) fn now() -> Self {
-        Self::try_from(chrono::Utc::now().timestamp()).expect("current timestamp to be valid")
-    }
-
     pub(crate) fn to_date(self) -> u32 {
         let chrono_date_time =
             chrono::DateTime::from_timestamp(self.0, 0_u32).expect("self.0 to be valid timestamp");

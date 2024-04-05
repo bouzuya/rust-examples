@@ -64,35 +64,48 @@ enum ErrorKind {
     SignedUrl(crate::private::signed_url::Error),
 }
 
-pub fn html_form_params(
-    service_account_client_email: &str,
-    service_account_private_key: &str,
-    bucket_name: &str,
-    object_name: &str,
-    region: &str,
-    expiration: i64,
+pub struct BuildHtmlFormDataOptions {
+    pub service_account_client_email: String,
+    pub service_account_private_key: String,
+    pub bucket_name: String,
+    pub object_name: String,
+    pub region: String,
+    pub expiration: i64,
+    pub now: SystemTime,
+}
+
+pub fn build_html_form_data(
+    BuildHtmlFormDataOptions {
+        service_account_client_email,
+        service_account_private_key,
+        bucket_name,
+        object_name,
+        region,
+        expiration,
+        now,
+    }: BuildHtmlFormDataOptions,
 ) -> Result<Vec<(&'static str, String)>, Error> {
-    let active_datetime = ActiveDatetime::now();
+    let now = UnixTimestamp::from_system_time(now).map_err(|_| ErrorKind::Now)?;
 
     let credential_scope = CredentialScope::new(
-        Date::from_unix_timestamp_obj(active_datetime.unix_timestamp_obj()),
-        Location::try_from(region).map_err(ErrorKind::Location)?,
+        Date::from_unix_timestamp_obj(now),
+        Location::try_from(region.as_str()).map_err(ErrorKind::Location)?,
         Service::Storage,
         RequestType::Goog4Request,
     )
     .map_err(ErrorKind::CredentialScope)?;
     let x_goog_algorithm = SigningAlgorithm::Goog4RsaSha256;
     let x_goog_credential = format!("{}/{}", service_account_client_email, credential_scope);
-    let x_goog_date = active_datetime.to_string();
+    let x_goog_date = ActiveDatetime::from_unix_timestamp_obj(now).to_string();
     let policy_document = policy_document::PolicyDocument {
         conditions: vec![
             policy_document::Condition::ExactMatching(
                 policy_document::Field::new("bucket").map_err(ErrorKind::Field)?,
-                policy_document::Value::new(bucket_name),
+                policy_document::Value::new(bucket_name.clone()),
             ),
             policy_document::Condition::ExactMatching(
                 policy_document::Field::new("key").map_err(ErrorKind::Field)?,
-                policy_document::Value::new(object_name),
+                policy_document::Value::new(object_name.clone()),
             ),
             // `policy` field is not included in the policy document
             policy_document::Condition::ExactMatching(
@@ -111,7 +124,7 @@ pub fn html_form_params(
             // `file` field is not included in the policy document
         ],
         expiration: policy_document::Expiration::from_unix_timestamp_obj(
-            UnixTimestamp::try_from(active_datetime.unix_timestamp() + expiration)
+            UnixTimestamp::try_from(i64::from(now) + expiration)
                 .map_err(|_| ErrorKind::ExpirationOutOfRange)?,
         ),
     };
@@ -130,8 +143,8 @@ pub fn html_form_params(
     let request_signature = hex_encode(&message_digest);
 
     Ok(vec![
-        ("bucket", bucket_name.to_string()),
-        ("key", object_name.to_string()),
+        ("bucket", bucket_name),
+        ("key", object_name),
         ("policy", encoded_policy),
         ("x-goog-algorithm", x_goog_algorithm.as_ref().to_string()),
         ("x-goog-credential", x_goog_credential),

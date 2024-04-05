@@ -18,10 +18,6 @@ impl ActiveDatetime {
         Self(unix_timestamp)
     }
 
-    pub(crate) fn now() -> Self {
-        Self(UnixTimestamp::now())
-    }
-
     pub(crate) fn unix_timestamp(&self) -> i64 {
         i64::from(self.0)
     }

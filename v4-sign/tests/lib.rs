@@ -1,12 +1,12 @@
 use std::time::SystemTime;
 
-use v4_sign::BuildSignedUrlOptions;
+use v4_sign::{BuildHtmlFormDataOptions, BuildSignedUrlOptions};
 
 #[ignore]
 #[tokio::test]
-async fn test_html_form() -> anyhow::Result<()> {
+async fn test_build_html_form_data() -> anyhow::Result<()> {
+    use v4_sign::build_html_form_data;
     use v4_sign::build_signed_url;
-    use v4_sign::html_form_params;
     use v4_sign::ServiceAccountCredentials;
 
     let ServiceAccountCredentials {
@@ -17,14 +17,15 @@ async fn test_html_form() -> anyhow::Result<()> {
     let object_name = "foo";
     let region = std::env::var("REGION")?;
 
-    let form_params = html_form_params(
-        &service_account_client_email,
-        &service_account_private_key,
-        &bucket_name,
-        object_name,
-        &region,
-        2,
-    )?;
+    let form_params = build_html_form_data(BuildHtmlFormDataOptions {
+        service_account_client_email: service_account_client_email.clone(),
+        service_account_private_key: service_account_private_key.clone(),
+        bucket_name: bucket_name.clone(),
+        object_name: object_name.to_string(),
+        region: region.clone(),
+        expiration: 2,
+        now: SystemTime::now(),
+    })?;
     let client = reqwest::Client::new();
     let response = client
         .post(format!("https://storage.googleapis.com/{}", bucket_name))
