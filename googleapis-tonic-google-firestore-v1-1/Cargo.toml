@@ -1,0 +1,14 @@
+[package]
+name = "googleapis-tonic-google-firestore-v1-1"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1.0.86"
+firestore-path = "0.9.25"
+google-cloud-auth = "0.16.0"
+google-cloud-token = "0.1.2"
+googleapis-tonic-google-firestore-v1 = "0.2.0"
+thiserror = "1.0.63"
+tokio = { version = "1.39.2", features = ["full"] }
+tonic = { version = "0.12.1", default-features = false, features = ["tls-webpki-roots"] }
