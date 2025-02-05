@@ -1,11 +1,15 @@
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
+
 pub mod hello {
     tonic::include_proto!("hello");
 }
 
+#[derive(Debug)]
 pub struct MyGreeter;
 
 #[tonic::async_trait]
 impl hello::greeter_server::Greeter for MyGreeter {
+    #[tracing::instrument]
     async fn hello(
         &self,
         request: tonic::Request<hello::HelloRequest>,
@@ -17,10 +21,12 @@ impl hello::greeter_server::Greeter for MyGreeter {
     }
 }
 
+#[derive(Debug)]
 pub struct MyService2;
 
 #[tonic::async_trait]
 impl hello::service2_server::Service2 for MyService2 {
+    #[tracing::instrument]
     async fn error(
         &self,
         _request: tonic::Request<hello::ErrorRequest>,
@@ -30,6 +36,7 @@ impl hello::service2_server::Service2 for MyService2 {
         Err(tonic::Status::unauthenticated("my unauthenticated message"))
     }
 
+    #[tracing::instrument]
     async fn scalar_value_type(
         &self,
         request: tonic::Request<hello::ScalarValueTypeRequest>,
@@ -73,7 +80,16 @@ impl hello::service2_server::Service2 for MyService2 {
 }
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::EnvFilter::from_default_env())
+        .with(tracing_subscriber::fmt::layer().with_span_events(
+            tracing_subscriber::fmt::format::FmtSpan::NEW
+                | tracing_subscriber::fmt::format::FmtSpan::CLOSE,
+        ))
+        .init();
+
     tonic::transport::Server::builder()
+        .trace_fn(|_http_request| tracing::info_span!("info_span"))
         .add_service(hello::greeter_server::GreeterServer::new(MyGreeter))
         .add_service(hello::service2_server::Service2Server::new(MyService2))
         .serve("0.0.0.0:3000".parse().unwrap())
