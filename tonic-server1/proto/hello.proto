@@ -15,8 +15,13 @@ message HelloResponse {
 }
 
 service Service2 {
+  rpc Error(ErrorRequest) returns (ErrorResponse);
   rpc ScalarValueType(ScalarValueTypeRequest) returns (ScalarValueTypeResponse) {}
 }
+
+message ErrorRequest {}
+
+message ErrorResponse {}
 
 message ScalarValueTypeRequest {
   double double_value = 1;

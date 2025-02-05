@@ -21,6 +21,15 @@ pub struct MyService2;
 
 #[tonic::async_trait]
 impl hello::service2_server::Service2 for MyService2 {
+    async fn error(
+        &self,
+        _request: tonic::Request<hello::ErrorRequest>,
+    ) -> Result<tonic::Response<hello::ErrorResponse>, tonic::Status> {
+        // Ok(tonic::Response::new(hello::ErrorResponse {}))
+        // Err(tonic::Status::unimplemented("my unimplemented message"))
+        Err(tonic::Status::unauthenticated("my unauthenticated message"))
+    }
+
     async fn scalar_value_type(
         &self,
         request: tonic::Request<hello::ScalarValueTypeRequest>,
