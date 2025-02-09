@@ -21,48 +21,49 @@ fn main() {
         .replace_text(1, "Hello, World!", "bouzuya")
         .unwrap();
     let page_id = *document.get_pages().get(&1_u32).unwrap();
-    // #[rustfmt::skip]
-    // let buf = vec![
-    //     0xFF, 0xFF,
-    //     0xFF, 0xFF,
-    //     0x00, 0x00,
-    //     0x00, 0x00,
-    //     0xFF, 0xFF,
-    //     0xFF, 0xFF,
-    //     0x00, 0x00,
-    //     0x00, 0x00,
-    //     0xFF, 0xFF,
-    //     0xFF, 0xFF,
-    //     0x00, 0x00,
-    //     0x00, 0x00,
-    //     0xFF, 0xFF,
-    //     0xFF, 0xFF,
-    //     0x00, 0x00,
-    //     0x00, 0x00,
-    // ];
-    // let image_stream = lopdf::Stream::new(
-    //      {
-    //          let mut dictionary = lopdf::Dictionary::new();
-    //          dictionary.set("Type", lopdf::Object::Name("XObject".into()));
-    //          dictionary.set("Subtype", lopdf::Object::Name("Image".into()));
-    //          // dictionary.set("Filter", lopdf::Object::Name("JPXDeccode".into()));
-    //          dictionary.set("ColorSpace", lopdf::Object::Name("DeviceGray".into()));
-    //          dictionary.set("Width", lopdf::Object::Integer(16));
-    //          dictionary.set("Height", lopdf::Object::Integer(16));
-    //          dictionary.set("BitsPerComponent", lopdf::Object::Integer(1));
-    //          dictionary
-    //      },
-    //      buf,
-    //  );
-
     // let image = Image::from_png_file_path("./bouzuya.png").unwrap();
     let image = Image::from_png_file_path("./dummy2.png").unwrap();
     let size = (image.width() as f32, image.height() as f32);
     let stream = image.into_lopdf_stream();
+    let x = mm_to_px(210.0 - px_to_mm(size.0));
+    let y = mm_to_px(297.0 - px_to_mm(size.1));
     document
-        .insert_image(page_id, stream, (0.0, 0.0), size)
+        .insert_image(page_id, stream, (x, y), size)
         .unwrap();
     let file = std::fs::File::create_new("o.pdf").unwrap();
     let mut writer = std::io::BufWriter::new(file);
     document.save_to(&mut writer).unwrap();
+}
+
+fn mm_to_px(mm: f32) -> f32 {
+    let mmpi = 25.4; // mm per inch
+    let dpi = 72.0; // dot (px) per inch
+    let px = mm / mmpi * dpi;
+    px
+}
+
+fn px_to_mm(px: f32) -> f32 {
+    let mmpi = 25.4; // mm per inch
+    let dpi = 72.0; // dot (px) per inch
+    let mm = px / dpi * mmpi;
+    mm
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_mm_to_px() {
+        // A4 = 210mm x 297mm
+        assert_eq!(mm_to_px(210.0), 595.2756);
+        assert_eq!(mm_to_px(297.0), 841.88983);
+    }
+
+    #[test]
+    fn test_px_to_mm() {
+        // A4 = 210mm x 297mm
+        assert_eq!(px_to_mm(595.2756), 210.0);
+        assert_eq!(px_to_mm(841.88983), 297.0);
+    }
 }

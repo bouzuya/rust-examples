@@ -89,7 +89,7 @@ impl Image {
     }
 
     pub(crate) fn into_lopdf_stream(self) -> ::lopdf::Stream {
-        lopdf::Stream::new(
+        let mut stream = lopdf::Stream::new(
             // Table 89 - Additional Entries Specific to an Image Dictionary
             lopdf::Dictionary::from_iter(
                 vec![
@@ -142,6 +142,8 @@ impl Image {
                 ),
             ),
             self.samples,
-        )
+        );
+        stream.compress().unwrap();
+        stream
     }
 }
