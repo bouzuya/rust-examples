@@ -4,7 +4,7 @@ mod image;
 mod unit;
 
 use image::Image;
-use unit::F32Ext as _;
+use unit::{F32Ext as _, Px};
 
 fn main() {
     let mut document = lopdf::Document::load("./a-output.pdf").unwrap();
@@ -22,23 +22,33 @@ fn main() {
     document
         .replace_text(1, "Hello, World!", "bouzuya")
         .unwrap();
-    let page_id = *document.get_pages().get(&1_u32).unwrap();
-    // let image = Image::from_png_file_path("./bouzuya.png").unwrap();
-    let image = Image::from_png_file_path("./dummy2.png").unwrap();
-    let width = (image.width() as f32).px();
-    let height = (image.height() as f32).px();
-    let stream = image.into_lopdf_stream();
-    let x = 210.0.mm().to_px() - width;
-    let y = 297.0.mm().to_px() - height;
-    document
-        .insert_image(
-            page_id,
-            stream,
-            (x.to_f32(), y.to_f32()),
-            (width.to_f32(), height.to_f32()),
-        )
-        .unwrap();
+
+    // insert image
+    {
+        let page_id = *document.get_pages().get(&1_u32).unwrap();
+        // let image = Image::from_png_file_path("./bouzuya.png").unwrap();
+        let image = Image::from_png_file_path("./dummy2.png").unwrap();
+        let width = (image.width() as f32).px();
+        let height = (image.height() as f32).px();
+        let stream = image.into_lopdf_stream();
+        let x = 210.0.mm().to_px() - width;
+        let y = 297.0.mm().to_px() - height;
+        insert_image(&mut document, page_id, stream, (x, y), (width, height)).unwrap();
+    }
+
     let file = std::fs::File::create_new("o.pdf").unwrap();
     let mut writer = std::io::BufWriter::new(file);
     document.save_to(&mut writer).unwrap();
+}
+
+fn insert_image(
+    document: &mut ::lopdf::Document,
+    page_id: ::lopdf::ObjectId,
+    img_object: ::lopdf::Stream,
+    (x, y): (Px, Px),
+    (width, height): (Px, Px),
+) -> Result<(), ::lopdf::Error> {
+    let position = (x.to_f32(), y.to_f32());
+    let size = (width.to_f32(), height.to_f32());
+    document.insert_image(page_id, img_object, position, size)
 }
