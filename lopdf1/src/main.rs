@@ -1,3 +1,7 @@
+use color_space::{ColorSpace, DeviceColorSpace};
+
+mod color_space;
+
 fn main() {
     let mut document = lopdf::Document::load("./a-output.pdf").unwrap();
     println!("document.version = {:?}", document.version);
@@ -61,7 +65,10 @@ fn main() {
             let mut dictionary = lopdf::Dictionary::new();
             dictionary.set("Type", lopdf::Object::Name("XObject".into()));
             dictionary.set("Subtype", lopdf::Object::Name("Image".into()));
-            dictionary.set("ColorSpace", lopdf::Object::Name("DeviceRGB".into()));
+            dictionary.set(
+                "ColorSpace",
+                DeviceColorSpace::DeviceRGB.to_lopdf_object_name(),
+            );
             dictionary.set("Width", lopdf::Object::Integer(info.width as i64));
             dictionary.set("Height", lopdf::Object::Integer(info.height as i64));
             dictionary.set(
