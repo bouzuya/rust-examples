@@ -1,8 +1,8 @@
-use bits_per_component::BitsPerComponent;
-use color_space::{ColorSpace, DeviceColorSpace};
-
 mod bits_per_component;
 mod color_space;
+mod image;
+
+use image::Image;
 
 fn main() {
     let mut document = lopdf::Document::load("./a-output.pdf").unwrap();
@@ -55,46 +55,13 @@ fn main() {
     //      buf,
     //  );
 
-    let decoder = png::Decoder::new(std::fs::File::open("./bouzuya.png").unwrap());
-    let mut reader = decoder.read_info().unwrap();
-    let mut buf = vec![0; reader.output_buffer_size()];
-    let info = reader.next_frame(&mut buf).unwrap();
-    let bytes = &buf[..info.buffer_size()];
-    let bytes_per_pixel = info.line_size / info.width as usize;
-    let color_space = DeviceColorSpace::DeviceRGB;
-    let bits_per_component = BitsPerComponent::from_u8(info.bit_depth as u8).unwrap();
-
-    let image_stream = lopdf::Stream::new(
-        {
-            let mut dictionary = lopdf::Dictionary::new();
-            dictionary.set("Type", lopdf::Object::Name("XObject".into()));
-            dictionary.set("Subtype", lopdf::Object::Name("Image".into()));
-            dictionary.set("ColorSpace", color_space.to_lopdf_object_name());
-            dictionary.set("Width", lopdf::Object::Integer(info.width as i64));
-            dictionary.set("Height", lopdf::Object::Integer(info.height as i64));
-            dictionary.set(
-                "BitsPerComponent",
-                bits_per_component.to_lopdf_object_integer(),
-            );
-            dictionary
-        },
-        (0..bytes.len() / bytes_per_pixel)
-            .flat_map(|i| match info.color_type.samples() {
-                1 | 2 => vec![bytes[i * bytes_per_pixel]],
-                3 | 4 => vec![
-                    bytes[i * bytes_per_pixel],
-                    bytes[i * bytes_per_pixel + 1],
-                    bytes[i * bytes_per_pixel + 2],
-                ],
-                _ => unreachable!(),
-            })
-            .collect::<Vec<u8>>(),
-    );
-
+    // let image = Image::from_png_file_path("./bouzuya.png").unwrap();
+    let image = Image::from_png_file_path("./dummy2.png").unwrap();
+    let size = (image.width() as f32, image.height() as f32);
+    let stream = image.into_lopdf_stream();
     document
-        .insert_image(page_id, image_stream, (0.0, 0.0), (100.0, 100.0))
+        .insert_image(page_id, stream, (0.0, 0.0), size)
         .unwrap();
-
     let file = std::fs::File::create_new("o.pdf").unwrap();
     let mut writer = std::io::BufWriter::new(file);
     document.save_to(&mut writer).unwrap();
