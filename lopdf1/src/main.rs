@@ -1,5 +1,7 @@
+use bits_per_component::BitsPerComponent;
 use color_space::{ColorSpace, DeviceColorSpace};
 
+mod bits_per_component;
 mod color_space;
 
 fn main() {
@@ -59,21 +61,20 @@ fn main() {
     let info = reader.next_frame(&mut buf).unwrap();
     let bytes = &buf[..info.buffer_size()];
     let bytes_per_pixel = info.line_size / info.width as usize;
+    let color_space = DeviceColorSpace::DeviceRGB;
+    let bits_per_component = BitsPerComponent::from_u8(info.bit_depth as u8).unwrap();
 
     let image_stream = lopdf::Stream::new(
         {
             let mut dictionary = lopdf::Dictionary::new();
             dictionary.set("Type", lopdf::Object::Name("XObject".into()));
             dictionary.set("Subtype", lopdf::Object::Name("Image".into()));
-            dictionary.set(
-                "ColorSpace",
-                DeviceColorSpace::DeviceRGB.to_lopdf_object_name(),
-            );
+            dictionary.set("ColorSpace", color_space.to_lopdf_object_name());
             dictionary.set("Width", lopdf::Object::Integer(info.width as i64));
             dictionary.set("Height", lopdf::Object::Integer(info.height as i64));
             dictionary.set(
                 "BitsPerComponent",
-                lopdf::Object::Integer(info.bit_depth as u8 as i64),
+                bits_per_component.to_lopdf_object_integer(),
             );
             dictionary
         },
