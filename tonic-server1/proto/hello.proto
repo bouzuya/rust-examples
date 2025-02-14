@@ -15,8 +15,15 @@ message HelloResponse {
 }
 
 service Service2 {
+  rpc CheckMetadata(CheckMetadataRequest) returns (CheckMetadataResponse);
   rpc Error(ErrorRequest) returns (ErrorResponse);
   rpc ScalarValueType(ScalarValueTypeRequest) returns (ScalarValueTypeResponse) {}
+}
+
+message CheckMetadataRequest {}
+
+message CheckMetadataResponse {
+  string bouzuya_id = 1;
 }
 
 message ErrorRequest {}

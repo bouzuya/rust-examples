@@ -1,4 +1,4 @@
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, Layer};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 pub mod hello {
     tonic::include_proto!("hello");
@@ -26,6 +26,23 @@ pub struct MyService2;
 
 #[tonic::async_trait]
 impl hello::service2_server::Service2 for MyService2 {
+    #[tracing::instrument]
+    async fn check_metadata(
+        &self,
+        request: tonic::Request<hello::CheckMetadataRequest>,
+    ) -> Result<tonic::Response<hello::CheckMetadataResponse>, tonic::Status> {
+        let bouzuya_id = request
+            .metadata()
+            .get("x-bouzuya-id")
+            .ok_or_else(|| tonic::Status::unauthenticated("no x-bouzuya-id"))?
+            .to_str()
+            .map_err(|_| tonic::Status::unauthenticated("x-bouzuya-id is not str"))?
+            .to_owned();
+        Ok(tonic::Response::new(hello::CheckMetadataResponse {
+            bouzuya_id,
+        }))
+    }
+
     #[tracing::instrument]
     async fn error(
         &self,
