@@ -1,0 +1,8 @@
+[package]
+name = "ical1"
+edition = "2024"
+publish = false
+
+[dependencies]
+ical = { version = "0.11.0", features = ["generator"] }
+
