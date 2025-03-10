@@ -5,4 +5,8 @@ publish = false
 
 [dependencies]
 ical = { version = "0.11.0", features = ["generator"] }
+thiserror = "2.0.12"
+
+[dev-dependencies]
+anyhow = "1.0.97"
 

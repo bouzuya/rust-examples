@@ -1,3 +1,5 @@
+mod date_time;
+
 fn main() {
     let mut cal = ical::generator::IcalCalendarBuilder::version("2.0")
         .gregorian()
