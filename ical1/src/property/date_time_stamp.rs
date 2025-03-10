@@ -1,9 +1,15 @@
-use crate::value_type::DateTime;
+use crate::value_type::{DateTime, DateTimeError};
 
 #[derive(Debug, thiserror::Error)]
 #[error("date-time stamp")]
-pub struct DateTimeStampError {
-    _private: (),
+pub struct DateTimeStampError(#[from] ErrorInner);
+
+#[derive(Debug, thiserror::Error)]
+enum ErrorInner {
+    #[error("date-time")]
+    DateTime(#[source] DateTimeError),
+    #[error("invalid format")]
+    InvalidFormat,
 }
 
 /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.2>
@@ -26,11 +32,11 @@ impl TryFrom<String> for DateTimeStamp {
                 .trim_start_matches("DTSTAMP:")
                 .trim_end_matches("\r\n")
                 .to_owned();
-            DateTime::try_from(date_time)
+            Ok(DateTime::try_from(date_time)
                 .map(DateTimeStamp)
-                .map_err(|_| DateTimeStampError { _private: () })
+                .map_err(ErrorInner::DateTime)?)
         } else {
-            Err(DateTimeStampError { _private: () })
+            Err(ErrorInner::InvalidFormat)?
         }
     }
 }

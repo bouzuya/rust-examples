@@ -1,9 +1,15 @@
-use crate::value_type::Text;
+use crate::value_type::{Text, TextError};
 
 #[derive(Debug, thiserror::Error)]
 #[error("unique identifier")]
-pub struct UniqueIdentifierError {
-    _private: (),
+pub struct UniqueIdentifierError(#[from] ErrorInner);
+
+#[derive(Debug, thiserror::Error)]
+enum ErrorInner {
+    #[error("invalid format")]
+    InvalidFormat,
+    #[error("text")]
+    Text(#[from] TextError),
 }
 
 /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.7>
@@ -26,11 +32,11 @@ impl TryFrom<String> for UniqueIdentifier {
                 .trim_start_matches("UID:")
                 .trim_end_matches("\r\n")
                 .to_owned();
-            Text::try_from(text)
+            Ok(Text::try_from(text)
                 .map(UniqueIdentifier)
-                .map_err(|_| UniqueIdentifierError { _private: () })
+                .map_err(ErrorInner::Text)?)
         } else {
-            Err(UniqueIdentifierError { _private: () })
+            Err(ErrorInner::InvalidFormat)?
         }
     }
 }
