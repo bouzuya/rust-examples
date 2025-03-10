@@ -1,5 +1,6 @@
 mod date_time;
 mod date_time_stamp;
+mod text;
 
 fn main() {
     let mut cal = ical::generator::IcalCalendarBuilder::version("2.0")
