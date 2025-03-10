@@ -1,7 +1,6 @@
-mod date_time;
 mod date_time_stamp;
-mod text;
 mod unique_identifier;
+mod value_type;
 
 fn main() {
     let mut cal = ical::generator::IcalCalendarBuilder::version("2.0")

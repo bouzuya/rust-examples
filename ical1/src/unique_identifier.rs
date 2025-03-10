@@ -1,3 +1,5 @@
+use crate::value_type::Text;
+
 #[derive(Debug, thiserror::Error)]
 #[error("unique identifier")]
 pub struct UniqueIdentifierError {
@@ -7,7 +9,7 @@ pub struct UniqueIdentifierError {
 /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.7>
 /// uidparam not supported
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct UniqueIdentifier(crate::text::Text);
+pub struct UniqueIdentifier(Text);
 
 impl From<UniqueIdentifier> for String {
     fn from(value: UniqueIdentifier) -> String {
@@ -24,7 +26,7 @@ impl TryFrom<String> for UniqueIdentifier {
                 .trim_start_matches("UID:")
                 .trim_end_matches("\r\n")
                 .to_owned();
-            crate::text::Text::try_from(text)
+            Text::try_from(text)
                 .map(UniqueIdentifier)
                 .map_err(|_| UniqueIdentifierError { _private: () })
         } else {

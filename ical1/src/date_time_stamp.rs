@@ -1,3 +1,5 @@
+use crate::value_type::DateTime;
+
 #[derive(Debug, thiserror::Error)]
 #[error("date-time stamp")]
 pub struct DateTimeStampError {
@@ -7,7 +9,7 @@ pub struct DateTimeStampError {
 /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.7.2>
 /// stmparam not supported
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct DateTimeStamp(crate::date_time::DateTime);
+pub struct DateTimeStamp(DateTime);
 
 impl From<DateTimeStamp> for String {
     fn from(value: DateTimeStamp) -> String {
@@ -24,7 +26,7 @@ impl TryFrom<String> for DateTimeStamp {
                 .trim_start_matches("DTSTAMP:")
                 .trim_end_matches("\r\n")
                 .to_owned();
-            crate::date_time::DateTime::try_from(date_time)
+            DateTime::try_from(date_time)
                 .map(DateTimeStamp)
                 .map_err(|_| DateTimeStampError { _private: () })
         } else {
