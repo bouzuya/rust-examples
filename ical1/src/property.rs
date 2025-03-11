@@ -1,9 +1,12 @@
+mod classification;
 mod date_time_end;
 mod date_time_stamp;
 mod date_time_start;
 mod summary;
 mod unique_identifier;
 
+pub use self::classification::Classification;
+pub use self::classification::ClassificationError;
 pub use self::date_time_end::DateTimeEnd;
 pub use self::date_time_end::DateTimeEndError;
 pub use self::date_time_stamp::DateTimeStamp;
