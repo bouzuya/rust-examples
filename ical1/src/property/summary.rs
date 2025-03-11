@@ -28,13 +28,11 @@ impl TryFrom<String> for Summary {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.starts_with("SUMMARY:") && value.ends_with("\r\n") {
-            let date_time = value
+            let text = value
                 .trim_start_matches("SUMMARY:")
                 .trim_end_matches("\r\n")
                 .to_owned();
-            Ok(Text::try_from(date_time)
-                .map(Summary)
-                .map_err(ErrorInner::Text)?)
+            Ok(Text::try_from(text).map(Self).map_err(ErrorInner::Text)?)
         } else {
             Err(ErrorInner::InvalidFormat)?
         }

@@ -28,13 +28,11 @@ impl TryFrom<String> for Classification {
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
         if value.starts_with("CLASS:") && value.ends_with("\r\n") {
-            let date_time = value
+            let text = value
                 .trim_start_matches("CLASS:")
                 .trim_end_matches("\r\n")
                 .to_owned();
-            Ok(Text::try_from(date_time)
-                .map(Classification)
-                .map_err(ErrorInner::Text)?)
+            Ok(Text::try_from(text).map(Self).map_err(ErrorInner::Text)?)
         } else {
             Err(ErrorInner::InvalidFormat)?
         }

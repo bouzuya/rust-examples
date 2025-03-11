@@ -33,7 +33,7 @@ impl TryFrom<String> for DateTimeStamp {
                 .trim_end_matches("\r\n")
                 .to_owned();
             Ok(DateTime::try_from(date_time)
-                .map(DateTimeStamp)
+                .map(Self)
                 .map_err(ErrorInner::DateTime)?)
         } else {
             Err(ErrorInner::InvalidFormat)?

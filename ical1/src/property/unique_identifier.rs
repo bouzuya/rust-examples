@@ -32,9 +32,7 @@ impl TryFrom<String> for UniqueIdentifier {
                 .trim_start_matches("UID:")
                 .trim_end_matches("\r\n")
                 .to_owned();
-            Ok(Text::try_from(text)
-                .map(UniqueIdentifier)
-                .map_err(ErrorInner::Text)?)
+            Ok(Text::try_from(text).map(Self).map_err(ErrorInner::Text)?)
         } else {
             Err(ErrorInner::InvalidFormat)?
         }
