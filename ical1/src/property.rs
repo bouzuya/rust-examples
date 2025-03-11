@@ -1,3 +1,4 @@
+mod categories;
 mod classification;
 mod date_time_end;
 mod date_time_stamp;
@@ -5,6 +6,8 @@ mod date_time_start;
 mod summary;
 mod unique_identifier;
 
+pub use self::categories::Categories;
+pub use self::categories::CategoriesError;
 pub use self::classification::Classification;
 pub use self::classification::ClassificationError;
 pub use self::date_time_end::DateTimeEnd;
