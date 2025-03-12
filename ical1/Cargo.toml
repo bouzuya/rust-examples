@@ -4,6 +4,7 @@ edition = "2024"
 publish = false
 
 [dependencies]
+derive_builder = "0.20.2"
 ical = { version = "0.11.0", features = ["generator"] }
 thiserror = "2.0.12"
 

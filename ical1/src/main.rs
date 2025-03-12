@@ -1,3 +1,4 @@
+mod component;
 mod property;
 mod value_type;
 
