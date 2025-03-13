@@ -38,3 +38,68 @@ END:VCALENDAR
 "#.replace("\n", "\r\n")
     );
 }
+
+fn fold<I>(iter: I) -> Option<Vec<String>>
+where
+    I: Iterator<Item = char>,
+{
+    let mut lines = Vec::new();
+    let mut line = String::new();
+    let mut cr = false;
+    for c in iter {
+        if cr {
+            cr = false;
+            if c == '\n' {
+                lines.push(line);
+                line = String::new();
+                continue;
+            }
+            // CR without LF
+            return None;
+        } else {
+            if c == '\r' {
+                cr = true;
+                continue;
+            }
+            if line.len() + c.len_utf8() > 75 {
+                lines.push(line);
+                line = String::new();
+                line.push(' ');
+            }
+            line.push(c);
+        }
+    }
+    if cr {
+        // CR at the end
+        return None;
+    }
+    lines.push(line);
+    Some(lines)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test() {
+        let chars = "DESCRIPTION:This is a long description that exists on a long line.";
+        assert_eq!(
+            fold(chars.chars()),
+            Some(vec![
+                "DESCRIPTION:This is a long description that exists on a long line.".to_owned()
+            ])
+        );
+
+        let chars =
+            "1234567890:234567890123456789012345678901234567890123456789012345678901234567890";
+        assert_eq!(
+            fold(chars.chars()),
+            Some(vec![
+                "1234567890:2345678901234567890123456789012345678901234567890123456789012345"
+                    .to_owned(),
+                " 67890".to_owned(),
+            ])
+        );
+    }
+}
