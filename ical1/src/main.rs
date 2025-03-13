@@ -39,42 +39,38 @@ END:VCALENDAR
     );
 }
 
-fn fold<I>(iter: I) -> Option<Vec<String>>
+fn fold<I>(mut iter: I) -> String
 where
     I: Iterator<Item = char>,
 {
-    let mut lines = Vec::new();
-    let mut line = String::new();
-    let mut cr = false;
-    for c in iter {
-        if cr {
-            cr = false;
-            if c == '\n' {
-                lines.push(line);
-                line = String::new();
-                continue;
+    let mut lines = String::new();
+    let mut line_len = 0;
+    while let Some(c) = iter.next() {
+        if c == '\r' {
+            match iter.next() {
+                Some('\n') => {
+                    lines.push('\r');
+                    lines.push('\n');
+                    line_len = 0;
+                }
+                _ => {
+                    // CR without LF
+                    unreachable!();
+                }
             }
-            // CR without LF
-            return None;
         } else {
-            if c == '\r' {
-                cr = true;
-                continue;
+            if line_len + c.len_utf8() > 75 {
+                lines.push('\r');
+                lines.push('\n');
+                lines.push(' ');
+                line_len = 1;
             }
-            if line.len() + c.len_utf8() > 75 {
-                lines.push(line);
-                line = String::new();
-                line.push(' ');
-            }
-            line.push(c);
+            lines.push(c);
+            line_len += c.len_utf8();
         }
     }
-    if cr {
-        // CR at the end
-        return None;
-    }
-    lines.push(line);
-    Some(lines)
+    assert_eq!(line_len, 0);
+    lines
 }
 
 #[cfg(test)]
@@ -82,24 +78,22 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
-        let chars = "DESCRIPTION:This is a long description that exists on a long line.";
+    fn test_fold() {
         assert_eq!(
-            fold(chars.chars()),
-            Some(vec![
-                "DESCRIPTION:This is a long description that exists on a long line.".to_owned()
-            ])
+            fold("DESCRIPTION:This is a long description that exists on a long line.\r\n".chars()),
+            "DESCRIPTION:This is a long description that exists on a long line.\r\n"
         );
 
-        let chars =
-            "1234567890:234567890123456789012345678901234567890123456789012345678901234567890";
         assert_eq!(
-            fold(chars.chars()),
-            Some(vec![
-                "1234567890:2345678901234567890123456789012345678901234567890123456789012345"
-                    .to_owned(),
-                " 67890".to_owned(),
-            ])
+            fold(
+                "1234567890:234567890123456789012345678901234567890123456789012345678901234567890\r\n"
+                    .chars()
+            ),
+            [
+                "1234567890:2345678901234567890123456789012345678901234567890123456789012345\r\n",
+                " 67890\r\n"
+            ]
+            .join("")
         );
     }
 }
