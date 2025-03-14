@@ -39,6 +39,145 @@ END:VCALENDAR
     );
 }
 
+/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.4>
+/// icalstream = 1*icalobject
+/// iCalendar stream
+struct ICalendarStream(Vec<ICalendarObject>);
+
+/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.4>
+/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.6>
+/// icalobject = "BEGIN" ":" "VCALENDAR" CRLF
+///              icalbody
+///              "END" ":" "VCALENDAR" CRLF
+/// icalbody   = calprops component
+/// calprops   = *(
+///            ;
+///            ; The following are REQUIRED,
+///            ; but MUST NOT occur more than once.
+///            ;
+///            prodid / version /
+///            ;
+///            ; The following are OPTIONAL,
+///            ; but MUST NOT occur more than once.
+///            ;
+///            calscale / method /
+///            ;
+///            ; The following are OPTIONAL,
+///            ; and MAY occur more than once.
+///            ;
+///            x-prop / iana-prop
+///            ;
+///            )
+/// component  = 1*(eventc / todoc / journalc / freebusyc /
+///              timezonec / iana-comp / x-comp)
+/// iana-comp  = "BEGIN" ":" iana-token CRLF
+///              1*contentline
+///              "END" ":" iana-token CRLF
+/// x-comp     = "BEGIN" ":" x-name CRLF
+///              1*contentline
+///              "END" ":" x-name CRLF
+/// iCalendar Object
+struct ICalendarObject {
+    calprops: Vec<CalendarProperty>,
+    component: Vec<CalendarComponent>,
+}
+
+/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.6>
+/// calprops
+/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7>
+enum CalendarProperty {
+    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.1>
+    /// calscale
+    /// Calendar Scale
+    CalendarScale(
+        // TODO
+    ),
+    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.2>
+    /// method
+    /// Method
+    Method(
+        // TODO
+    ),
+    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.3>
+    /// prodid
+    /// Product Identifier
+    ProductIdentifier(
+        // TODO
+    ),
+    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.4>
+    /// version
+    /// Version
+    Version(
+        // TODO
+    ),
+
+    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.8.1>
+    /// iana-prop
+    /// 3.8. Component Properties
+    /// 3.8.8. Miscellaneous Component Properties
+    /// 3.8.8.1. IANA Properties
+    IanaProperties(
+        // TODO
+    ),
+    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.8.2>
+    /// x-prop
+    /// 3.8. Component Properties
+    /// 3.8.8. Miscellaneous Component Properties
+    /// 3.8.8.2. Non-Standard Properties
+    NonStandardProperties(
+        // TODO
+    ),
+}
+
+/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.6>
+/// component  = 1*(eventc / todoc / journalc / freebusyc /
+///              timezonec / iana-comp / x-comp)
+/// iana-comp  = "BEGIN" ":" iana-token CRLF
+///              1*contentline
+///              "END" ":" iana-token CRLF
+/// x-comp     = "BEGIN" ":" x-name CRLF
+///              1*contentline
+///              "END" ":" x-name CRLF
+enum CalendarComponent {
+    /// Event Component
+    /// eventc
+    Event(
+        // TODO
+    ),
+    /// To-Do Component
+    /// todoc
+    Todo(
+        // TODO
+    ),
+    /// Journal Component
+    /// journalc
+    Journal(
+        // TODO
+    ),
+    /// Free/Busy Component
+    /// freebusyc
+    Freebusy(
+        // TODO
+    ),
+    /// Time Zone Component
+    /// timezonec
+    Timezone(
+        // TODO
+    ),
+    /// iana-comp  = "BEGIN" ":" iana-token CRLF
+    ///              1*contentline
+    ///              "END" ":" iana-token CRLF
+    IanaComp(
+        // TODO
+    ),
+    /// x-comp     = "BEGIN" ":" x-name CRLF
+    ///              1*contentline
+    ///              "END" ":" x-name CRLF
+    XComp(
+        // TODO
+    ),
+}
+
 fn fold<I>(mut iter: I) -> String
 where
     I: Iterator<Item = char>,
