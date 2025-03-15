@@ -7,10 +7,7 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 .prodid(i_calendar::ProductIdentifier::from_value(
                     "-//ABC Corporation//NONSGML My Product//EN",
                 )?)
-                .version(
-                    // TODO: Version::new
-                    i_calendar::Version::try_from("VERSION:2.0\r\n".to_owned())?,
-                )
+                .version(i_calendar::Version::from_value("2.0")?)
                 .add_component(
                     // TODO: Component::new
                     i_calendar::CalendarComponent::Event(i_calendar::Event::try_from(

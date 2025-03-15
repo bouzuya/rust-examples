@@ -212,7 +212,7 @@ struct CalendarProperties {
 impl WriteTo for CalendarProperties {
     fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result {
         w.write_str(self.prodid.clone().into_string().as_str())?;
-        w.write_str(String::from(self.version.clone()).as_str())?;
+        w.write_str(self.version.clone().into_string().as_str())?;
         if let Some(calscale) = &self.calscale {
             w.write_str(String::from(calscale.clone()).as_str())?;
         }

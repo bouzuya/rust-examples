@@ -2,7 +2,7 @@
 //!
 //! <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.4>
 
-use crate::value_type::{Text, TextError};
+use crate::i_calendar::value_type::{Text, TextError};
 
 #[derive(Debug, thiserror::Error)]
 #[error("version")]
@@ -20,16 +20,13 @@ enum ErrorInner {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Version(Text);
 
-impl From<Version> for String {
-    fn from(value: Version) -> String {
-        format!("VERSION:{}\r\n", String::from(value.0))
+impl Version {
+    // TODO: what is value?
+    pub fn from_value(s: &str) -> Result<Self, VersionError> {
+        Self::from_string(format!("VERSION:{}\r\n", s))
     }
-}
 
-impl TryFrom<String> for Version {
-    type Error = VersionError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, VersionError> {
         if value.starts_with("VERSION:") && value.ends_with("\r\n") {
             Ok(Text::try_from(
                 value
@@ -43,6 +40,10 @@ impl TryFrom<String> for Version {
             Err(ErrorInner::InvalidFormat)?
         }
     }
+
+    pub(in crate::i_calendar) fn into_string(self) -> String {
+        format!("VERSION:{}\r\n", String::from(self.0))
+    }
 }
 
 #[cfg(test)]
@@ -55,10 +56,14 @@ mod tests {
         assert_fn::<Version>();
 
         let s = "VERSION:2.0\r\n".to_owned();
-        assert_eq!(String::from(Version::try_from(s.clone())?), s);
+        assert_eq!(Version::from_string(s.clone())?.into_string(), s);
 
         let s = "VERSION:2.0".to_owned();
-        assert!(Version::try_from(s).is_err());
+        assert!(Version::from_string(s).is_err());
+
+        let s = "2.0";
+        assert_eq!(Version::from_value(s)?.into_string(), "VERSION:2.0\r\n");
+
         Ok(())
     }
 }
