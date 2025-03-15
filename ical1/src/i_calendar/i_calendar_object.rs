@@ -214,7 +214,7 @@ impl WriteTo for CalendarProperties {
         w.write_str(self.prodid.clone().into_string().as_str())?;
         w.write_str(self.version.clone().into_string().as_str())?;
         if let Some(calscale) = &self.calscale {
-            w.write_str(String::from(calscale.clone()).as_str())?;
+            w.write_str(calscale.clone().into_string().as_str())?;
         }
         if let Some(method) = &self.method {
             w.write_str(String::from(method.clone()).as_str())?;

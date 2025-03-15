@@ -2,7 +2,7 @@
 //!
 //! <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.1>
 
-use crate::value_type::{Text, TextError};
+use crate::i_calendar::value_type::{Text, TextError};
 
 #[derive(Debug, thiserror::Error)]
 #[error("calendar scale")]
@@ -20,16 +20,13 @@ enum ErrorInner {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct CalendarScale(Text);
 
-impl From<CalendarScale> for String {
-    fn from(value: CalendarScale) -> String {
-        format!("CALSCALE:{}\r\n", String::from(value.0))
+impl CalendarScale {
+    // TODO: what is value?
+    pub fn from_value(s: &str) -> Result<Self, CalendarScaleError> {
+        Self::from_string(format!("CALSCALE:{}\r\n", s))
     }
-}
 
-impl TryFrom<String> for CalendarScale {
-    type Error = CalendarScaleError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, CalendarScaleError> {
         if value == "CALSCALE:GREGORIAN\r\n" {
             Ok(Self(
                 Text::try_from("GREGORIAN".to_owned()).map_err(ErrorInner::Text)?,
@@ -37,6 +34,10 @@ impl TryFrom<String> for CalendarScale {
         } else {
             Err(ErrorInner::InvalidFormat)?
         }
+    }
+
+    pub(in crate::i_calendar) fn into_string(self) -> String {
+        format!("CALSCALE:{}\r\n", String::from(self.0))
     }
 }
 
@@ -50,10 +51,17 @@ mod tests {
         assert_fn::<CalendarScale>();
 
         let s = "CALSCALE:GREGORIAN\r\n".to_owned();
-        assert_eq!(String::from(CalendarScale::try_from(s.clone())?), s);
+        assert_eq!(CalendarScale::from_string(s.clone())?.into_string(), s);
 
         let s = "CALSCALE:GREGORIAN".to_owned();
-        assert!(CalendarScale::try_from(s).is_err());
+        assert!(CalendarScale::from_string(s).is_err());
+
+        let s = "GREGORIAN";
+        assert_eq!(
+            CalendarScale::from_value(s)?.into_string(),
+            "CALSCALE:GREGORIAN\r\n"
+        );
+
         Ok(())
     }
 }
