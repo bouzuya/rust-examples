@@ -1,4 +1,4 @@
-use crate::value_type::{Text, TextError};
+use crate::i_calendar::value_type::{Text, TextError};
 
 #[derive(Debug, thiserror::Error)]
 #[error("classification")]
