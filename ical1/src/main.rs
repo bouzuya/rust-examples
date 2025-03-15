@@ -4,12 +4,9 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let i_calendar_stream = i_calendar::ICalendarStream::builder()
         .add_object(
             i_calendar::ICalendarObject::builder()
-                .prodid(
-                    // TODO: ProductIdentifier::new
-                    i_calendar::ProductIdentifier::try_from(
-                        "PRODID:-//ABC Corporation//NONSGML My Product//EN\r\n".to_owned(),
-                    )?,
-                )
+                .prodid(i_calendar::ProductIdentifier::from_value(
+                    "-//ABC Corporation//NONSGML My Product//EN",
+                )?)
                 .version(
                     // TODO: Version::new
                     i_calendar::Version::try_from("VERSION:2.0\r\n".to_owned())?,

@@ -20,16 +20,15 @@ enum ErrorInner {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct ProductIdentifier(Text);
 
-impl From<ProductIdentifier> for String {
-    fn from(value: ProductIdentifier) -> String {
-        format!("PRODID:{}\r\n", String::from(value.0))
+impl ProductIdentifier {
+    // TODO: what is value?
+    pub fn from_value(s: &str) -> Result<Self, ProductIdentifierError> {
+        Self::from_string(format!("PRODID:{}\r\n", s))
     }
-}
 
-impl TryFrom<String> for ProductIdentifier {
-    type Error = ProductIdentifierError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+    pub(in crate::i_calendar) fn from_string(
+        value: String,
+    ) -> Result<Self, ProductIdentifierError> {
         if value.starts_with("PRODID:") && value.ends_with("\r\n") {
             let text = value
                 .trim_start_matches("PRODID:")
@@ -39,6 +38,10 @@ impl TryFrom<String> for ProductIdentifier {
         } else {
             Err(ErrorInner::InvalidFormat)?
         }
+    }
+
+    pub(in crate::i_calendar) fn into_string(self) -> String {
+        format!("PRODID:{}\r\n", String::from(self.0))
     }
 }
 
@@ -52,10 +55,17 @@ mod tests {
         assert_fn::<ProductIdentifier>();
 
         let s = "PRODID:-//ABC Corporation//NONSGML My Product//EN\r\n".to_owned();
-        assert_eq!(String::from(ProductIdentifier::try_from(s.clone())?), s);
+        assert_eq!(ProductIdentifier::from_string(s.clone())?.into_string(), s);
 
         let s = "PRODID:-//ABC Corporation//NONSGML My Product//EN".to_owned();
-        assert!(ProductIdentifier::try_from(s.clone()).is_err());
+        assert!(ProductIdentifier::from_string(s.clone()).is_err());
+
+        let s = "-//ABC Corporation//NONSGML My Product//EN";
+        assert_eq!(
+            ProductIdentifier::from_value(s)?.into_string(),
+            "PRODID:-//ABC Corporation//NONSGML My Product//EN\r\n"
+        );
+
         Ok(())
     }
 }
