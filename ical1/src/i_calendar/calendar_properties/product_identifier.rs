@@ -2,7 +2,7 @@
 //!
 //! <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.3>
 
-use crate::value_type::{Text, TextError};
+use crate::i_calendar::value_type::{Text, TextError};
 
 #[derive(Debug, thiserror::Error)]
 #[error("unique identifier")]

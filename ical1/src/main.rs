@@ -1,41 +1,35 @@
-mod calendar_properties;
-mod component;
-mod i_calendar_object;
-mod property;
-mod value_type;
+mod i_calendar;
 
 fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let i_calendar_stream = i_calendar_object::ICalendarStream::builder()
+    let i_calendar_stream = i_calendar::ICalendarStream::builder()
         .add_object(
-            i_calendar_object::ICalendarObject::builder()
+            i_calendar::ICalendarObject::builder()
                 .prodid(
                     // TODO: ProductIdentifier::new
-                    calendar_properties::ProductIdentifier::try_from(
+                    i_calendar::ProductIdentifier::try_from(
                         "PRODID:-//ABC Corporation//NONSGML My Product//EN\r\n".to_owned(),
                     )?,
                 )
                 .version(
                     // TODO: Version::new
-                    calendar_properties::Version::try_from("VERSION:2.0\r\n".to_owned())?,
+                    i_calendar::Version::try_from("VERSION:2.0\r\n".to_owned())?,
                 )
                 .add_component(
                     // TODO: Component::new
-                    i_calendar_object::CalendarComponent::Event(
-                        i_calendar_object::Event::try_from(
-                            [
-                                "BEGIN:VEVENT\r\n",
-                                "UID:19970901T130000Z-123401@example.com\r\n",
-                                "DTSTAMP:19970901T130000Z\r\n",
-                                "DTSTART:19970903T163000Z\r\n",
-                                "DTEND:19970903T190000Z\r\n",
-                                "SUMMARY:Annual Employee Review\r\n",
-                                "CLASS:PRIVATE\r\n",
-                                "CATEGORIES:BUSINESS,HUMAN RESOURCES\r\n",
-                                "END:VEVENT\r\n",
-                            ]
-                            .join(""),
-                        )?,
-                    ),
+                    i_calendar::CalendarComponent::Event(i_calendar::Event::try_from(
+                        [
+                            "BEGIN:VEVENT\r\n",
+                            "UID:19970901T130000Z-123401@example.com\r\n",
+                            "DTSTAMP:19970901T130000Z\r\n",
+                            "DTSTART:19970903T163000Z\r\n",
+                            "DTEND:19970903T190000Z\r\n",
+                            "SUMMARY:Annual Employee Review\r\n",
+                            "CLASS:PRIVATE\r\n",
+                            "CATEGORIES:BUSINESS,HUMAN RESOURCES\r\n",
+                            "END:VEVENT\r\n",
+                        ]
+                        .join(""),
+                    )?),
                 )
                 .build()?,
         )

@@ -1,4 +1,4 @@
-use crate::{calendar_properties, component};
+use crate::i_calendar::{calendar_properties, component};
 
 pub use self::component::Event;
 pub use self::component::EventError;
