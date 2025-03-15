@@ -8,6 +8,8 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                     "-//ABC Corporation//NONSGML My Product//EN",
                 )?)
                 .version(i_calendar::Version::from_value("2.0")?)
+                .calscale(i_calendar::CalendarScale::from_value("GREGORIAN")?)
+                .method(i_calendar::Method::from_value("PUBLISH")?)
                 .add_component(
                     // TODO: Component::new
                     i_calendar::CalendarComponent::Event(i_calendar::Event::try_from(
@@ -34,6 +36,8 @@ fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             "BEGIN:VCALENDAR\r\n",
             "PRODID:-//ABC Corporation//NONSGML My Product//EN\r\n",
             "VERSION:2.0\r\n",
+            "CALSCALE:GREGORIAN\r\n",
+            "METHOD:PUBLISH\r\n",
             "BEGIN:VEVENT\r\n",
             "UID:19970901T130000Z-123401@example.com\r\n",
             "DTSTAMP:19970901T130000Z\r\n",
