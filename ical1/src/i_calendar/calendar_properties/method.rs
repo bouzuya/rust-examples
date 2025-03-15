@@ -2,7 +2,7 @@
 //!
 //! <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.2>
 
-use crate::value_type::{Text, TextError};
+use crate::i_calendar::value_type::{Text, TextError};
 
 #[derive(Debug, thiserror::Error)]
 #[error("method")]
@@ -20,16 +20,13 @@ enum ErrorInner {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Method(Text);
 
-impl From<Method> for String {
-    fn from(value: Method) -> String {
-        format!("METHOD:{}\r\n", String::from(value.0))
+impl Method {
+    // TODO: what is value?
+    pub fn from_value(s: &str) -> Result<Self, MethodError> {
+        Self::from_string(format!("METHOD:{}\r\n", s))
     }
-}
 
-impl TryFrom<String> for Method {
-    type Error = MethodError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, MethodError> {
         if value.starts_with("METHOD:") && value.ends_with("\r\n") {
             Ok(Text::try_from(
                 value
@@ -43,6 +40,10 @@ impl TryFrom<String> for Method {
             Err(ErrorInner::InvalidFormat)?
         }
     }
+
+    pub(in crate::i_calendar) fn into_string(self) -> String {
+        format!("METHOD:{}\r\n", String::from(self.0))
+    }
 }
 
 #[cfg(test)]
@@ -55,10 +56,14 @@ mod tests {
         assert_fn::<Method>();
 
         let s = "METHOD:REQUEST\r\n".to_owned();
-        assert_eq!(String::from(Method::try_from(s.clone())?), s);
+        assert_eq!(Method::from_string(s.clone())?.into_string(), s);
 
         let s = "METHOD:REQUEST".to_owned();
-        assert!(Method::try_from(s).is_err());
+        assert!(Method::from_string(s).is_err());
+
+        let s = "REQUEST";
+        assert_eq!(Method::from_value(s)?.into_string(), "METHOD:REQUEST\r\n");
+
         Ok(())
     }
 }
