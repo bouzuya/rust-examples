@@ -1,9 +1,65 @@
 mod calendar_properties;
 mod component;
+mod i_calendar_object;
 mod property;
 mod value_type;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let i_calendar_stream = i_calendar_object::ICalendarStream::builder()
+        .add_object(
+            i_calendar_object::ICalendarObject::builder()
+                .prodid(
+                    // TODO: ProductIdentifier::new
+                    calendar_properties::ProductIdentifier::try_from(
+                        "PRODID:-//ABC Corporation//NONSGML My Product//EN\r\n".to_owned(),
+                    )?,
+                )
+                .version(
+                    // TODO: Version::new
+                    calendar_properties::Version::try_from("VERSION:2.0\r\n".to_owned())?,
+                )
+                .add_component(
+                    // TODO: Component::new
+                    i_calendar_object::CalendarComponent::Event(
+                        i_calendar_object::Event::try_from(
+                            [
+                                "BEGIN:VEVENT\r\n",
+                                "UID:19970901T130000Z-123401@example.com\r\n",
+                                "DTSTAMP:19970901T130000Z\r\n",
+                                "DTSTART:19970903T163000Z\r\n",
+                                "DTEND:19970903T190000Z\r\n",
+                                "SUMMARY:Annual Employee Review\r\n",
+                                "CLASS:PRIVATE\r\n",
+                                "CATEGORIES:BUSINESS,HUMAN RESOURCES\r\n",
+                                "END:VEVENT\r\n",
+                            ]
+                            .join(""),
+                        )?,
+                    ),
+                )
+                .build()?,
+        )
+        .build()?;
+    assert_eq!(
+        i_calendar_stream.to_string(),
+        [
+            "BEGIN:VCALENDAR\r\n",
+            "PRODID:-//ABC Corporation//NONSGML My Product//EN\r\n",
+            "VERSION:2.0\r\n",
+            "BEGIN:VEVENT\r\n",
+            "UID:19970901T130000Z-123401@example.com\r\n",
+            "DTSTAMP:19970901T130000Z\r\n",
+            "DTSTART:19970903T163000Z\r\n",
+            "DTEND:19970903T190000Z\r\n",
+            "SUMMARY:Annual Employee Review\r\n",
+            "CLASS:PRIVATE\r\n",
+            "CATEGORIES:BUSINESS,HUMAN RESOURCES\r\n",
+            "END:VEVENT\r\n",
+            "END:VCALENDAR\r\n"
+        ]
+        .join("")
+    );
+
     let mut cal = ical::generator::IcalCalendarBuilder::version("2.0")
         .gregorian()
         .prodid("prodid1")
@@ -24,7 +80,7 @@ fn main() {
 
     assert_eq!(
         ical::generator::Emitter::generate(&cal),
-r#"BEGIN:VCALENDAR
+        r#"BEGIN:VCALENDAR
 VERSION:2.0
 CALSCALE:GREGORIAN
 PRODID:prodid1
@@ -36,130 +92,11 @@ DTEND;TZID=Asia/Tokyo:20250309T220000
 SUMMARY:Summary1
 END:VEVENT
 END:VCALENDAR
-"#.replace("\n", "\r\n")
+"#
+        .replace("\n", "\r\n")
     );
-}
 
-/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.4>
-/// icalstream = 1*icalobject
-/// iCalendar stream
-struct ICalendarStream(Vec<ICalendarObject>);
-
-/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.4>
-/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.6>
-/// icalobject = "BEGIN" ":" "VCALENDAR" CRLF
-///              icalbody
-///              "END" ":" "VCALENDAR" CRLF
-/// icalbody   = calprops component
-/// calprops   = *(
-///            ;
-///            ; The following are REQUIRED,
-///            ; but MUST NOT occur more than once.
-///            ;
-///            prodid / version /
-///            ;
-///            ; The following are OPTIONAL,
-///            ; but MUST NOT occur more than once.
-///            ;
-///            calscale / method /
-///            ;
-///            ; The following are OPTIONAL,
-///            ; and MAY occur more than once.
-///            ;
-///            x-prop / iana-prop
-///            ;
-///            )
-/// component  = 1*(eventc / todoc / journalc / freebusyc /
-///              timezonec / iana-comp / x-comp)
-/// iana-comp  = "BEGIN" ":" iana-token CRLF
-///              1*contentline
-///              "END" ":" iana-token CRLF
-/// x-comp     = "BEGIN" ":" x-name CRLF
-///              1*contentline
-///              "END" ":" x-name CRLF
-/// iCalendar Object
-struct ICalendarObject {
-    calprops: CalendarProperties,
-    component: Vec<CalendarComponent>,
-}
-
-/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.6>
-/// calprops
-struct CalendarProperties {
-    prodid: calendar_properties::ProductIdentifier,
-    version: calendar_properties::Version,
-    // calscale: Option<CalendarScale>,
-    // method: Option<Method>,
-    // x_prop: Vec<NonStandardProperty>,
-    // iana_prop: Vec<IanaProperty>,
-}
-
-// enum CalendarProperty {
-//     /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.8.1>
-//     /// iana-prop
-//     /// 3.8. Component Properties
-//     /// 3.8.8. Miscellaneous Component Properties
-//     /// 3.8.8.1. IANA Properties
-//     IanaProperties(
-//         // TODO
-//     ),
-//     /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.8.2>
-//     /// x-prop
-//     /// 3.8. Component Properties
-//     /// 3.8.8. Miscellaneous Component Properties
-//     /// 3.8.8.2. Non-Standard Properties
-//     NonStandardProperties(
-//         // TODO
-//     ),
-// }
-
-/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.6>
-/// component  = 1*(eventc / todoc / journalc / freebusyc /
-///              timezonec / iana-comp / x-comp)
-/// iana-comp  = "BEGIN" ":" iana-token CRLF
-///              1*contentline
-///              "END" ":" iana-token CRLF
-/// x-comp     = "BEGIN" ":" x-name CRLF
-///              1*contentline
-///              "END" ":" x-name CRLF
-enum CalendarComponent {
-    /// Event Component
-    /// eventc
-    Event(
-        // TODO
-    ),
-    /// To-Do Component
-    /// todoc
-    Todo(
-        // TODO
-    ),
-    /// Journal Component
-    /// journalc
-    Journal(
-        // TODO
-    ),
-    /// Free/Busy Component
-    /// freebusyc
-    Freebusy(
-        // TODO
-    ),
-    /// Time Zone Component
-    /// timezonec
-    Timezone(
-        // TODO
-    ),
-    /// iana-comp  = "BEGIN" ":" iana-token CRLF
-    ///              1*contentline
-    ///              "END" ":" iana-token CRLF
-    IanaComp(
-        // TODO
-    ),
-    /// x-comp     = "BEGIN" ":" x-name CRLF
-    ///              1*contentline
-    ///              "END" ":" x-name CRLF
-    XComp(
-        // TODO
-    ),
+    Ok(())
 }
 
 fn fold<I>(mut iter: I) -> String
