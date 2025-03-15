@@ -5,6 +5,7 @@ mod date_time_stamp;
 mod date_time_start;
 mod summary;
 mod unique_identifier;
+mod version;
 
 pub use self::categories::Categories;
 pub use self::categories::CategoriesError;
@@ -20,3 +21,5 @@ pub use self::summary::Summary;
 pub use self::summary::SummaryError;
 pub use self::unique_identifier::UniqueIdentifier;
 pub use self::unique_identifier::UniqueIdentifierError;
+pub use self::version::Version;
+pub use self::version::VersionError;
