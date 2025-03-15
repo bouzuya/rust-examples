@@ -1,3 +1,4 @@
+mod calendar_properties;
 mod component;
 mod property;
 mod value_type;
@@ -78,56 +79,39 @@ struct ICalendarStream(Vec<ICalendarObject>);
 ///              "END" ":" x-name CRLF
 /// iCalendar Object
 struct ICalendarObject {
-    calprops: Vec<CalendarProperty>,
+    calprops: CalendarProperties,
     component: Vec<CalendarComponent>,
 }
 
 /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.6>
 /// calprops
-/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7>
-enum CalendarProperty {
-    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.1>
-    /// calscale
-    /// Calendar Scale
-    CalendarScale(
-        // TODO
-    ),
-    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.2>
-    /// method
-    /// Method
-    Method(
-        // TODO
-    ),
-    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.3>
-    /// prodid
-    /// Product Identifier
-    ProductIdentifier(
-        // TODO
-    ),
-    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.4>
-    /// version
-    /// Version
-    Version(
-        // TODO
-    ),
-
-    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.8.1>
-    /// iana-prop
-    /// 3.8. Component Properties
-    /// 3.8.8. Miscellaneous Component Properties
-    /// 3.8.8.1. IANA Properties
-    IanaProperties(
-        // TODO
-    ),
-    /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.8.2>
-    /// x-prop
-    /// 3.8. Component Properties
-    /// 3.8.8. Miscellaneous Component Properties
-    /// 3.8.8.2. Non-Standard Properties
-    NonStandardProperties(
-        // TODO
-    ),
+struct CalendarProperties {
+    prodid: calendar_properties::ProductIdentifier,
+    version: calendar_properties::Version,
+    // calscale: Option<CalendarScale>,
+    // method: Option<Method>,
+    // x_prop: Vec<NonStandardProperty>,
+    // iana_prop: Vec<IanaProperty>,
 }
+
+// enum CalendarProperty {
+//     /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.8.1>
+//     /// iana-prop
+//     /// 3.8. Component Properties
+//     /// 3.8.8. Miscellaneous Component Properties
+//     /// 3.8.8.1. IANA Properties
+//     IanaProperties(
+//         // TODO
+//     ),
+//     /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.8.2>
+//     /// x-prop
+//     /// 3.8. Component Properties
+//     /// 3.8.8. Miscellaneous Component Properties
+//     /// 3.8.8.2. Non-Standard Properties
+//     NonStandardProperties(
+//         // TODO
+//     ),
+// }
 
 /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.6>
 /// component  = 1*(eventc / todoc / journalc / freebusyc /

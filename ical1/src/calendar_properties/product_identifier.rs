@@ -1,3 +1,7 @@
+//! Product Identifier
+//!
+//! <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.3>
+
 use crate::value_type::{Text, TextError};
 
 #[derive(Debug, thiserror::Error)]
@@ -12,7 +16,6 @@ enum ErrorInner {
     Text(#[from] TextError),
 }
 
-/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.8.4.7>
 /// pidparam not supported
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct ProductIdentifier(Text);

@@ -1,3 +1,7 @@
+//! Version
+//!
+//! <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.4>
+
 use crate::value_type::{Text, TextError};
 
 #[derive(Debug, thiserror::Error)]
@@ -12,7 +16,6 @@ enum ErrorInner {
     InvalidFormat,
 }
 
-/// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.4>
 /// verparam not supported
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Version(Text);
