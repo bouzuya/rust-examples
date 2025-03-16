@@ -167,8 +167,8 @@ mod tests {
     #[test]
     fn test_i_calendar_stream() -> anyhow::Result<()> {
         use i_calendar::{
-            CalendarScale, Event, ICalendarObject, ICalendarStream, Method, ProductIdentifier,
-            UniqueIdentifier, Version,
+            CalendarScale, DateTimeStamp, Event, ICalendarObject, ICalendarStream, Method,
+            ProductIdentifier, UniqueIdentifier, Version,
         };
         let i_calendar_stream = ICalendarStream::builder()
             .add_object(
@@ -184,6 +184,7 @@ mod tests {
                             .uid(UniqueIdentifier::from_value(
                                 "19970901T130000Z-123401@example.com",
                             )?)
+                            .dtstamp(DateTimeStamp::from_value("19970901T130000Z")?)
                             .build()?,
                         // Event::try_from(
                         //     [

@@ -87,7 +87,7 @@ impl Event {
                         .map_err(ErrorInner::UniqueIdentifier)?;
                     builder.uid(uid);
                 } else if line.starts_with("DTSTAMP:") {
-                    let dtstamp = DateTimeStamp::try_from(format!("{}\r\n", line))
+                    let dtstamp = DateTimeStamp::from_string(format!("{}\r\n", line))
                         .map_err(ErrorInner::DateTimeStamp)?;
                     builder.dtstamp(dtstamp);
                 } else if line.starts_with("DTSTART:") {
@@ -132,7 +132,7 @@ impl Event {
         let mut lines = vec![];
         lines.push("BEGIN:VEVENT\r\n".to_owned());
         lines.push(self.uid.into_string());
-        lines.push(String::from(self.dtstamp));
+        lines.push(self.dtstamp.into_string());
         lines.push(String::from(self.dtstart));
         if let Some(dtend) = self.dtend {
             lines.push(String::from(dtend));
@@ -176,6 +176,11 @@ impl EventBuilder {
 
     pub fn build(self) -> Result<Event, EventError> {
         Event::from_builder(self)
+    }
+
+    pub fn dtstamp(mut self, dtstamp: DateTimeStamp) -> Self {
+        self.dtstamp = Some(dtstamp);
+        self
     }
 
     pub fn uid(mut self, uid: UniqueIdentifier) -> Self {
