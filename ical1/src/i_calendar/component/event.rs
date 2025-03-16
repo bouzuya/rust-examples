@@ -107,7 +107,7 @@ impl Event {
                         .map_err(ErrorInner::Classification)?;
                     builder.class(Some(class));
                 } else if line.starts_with("CATEGORIES:") {
-                    let categories = Categories::try_from(format!("{}\r\n", line))
+                    let categories = Categories::from_string(format!("{}\r\n", line))
                         .map_err(ErrorInner::Categories)?;
                     builder.categories(
                         builder
@@ -144,7 +144,7 @@ impl Event {
             lines.push(class.into_string());
         }
         for categories in self.categories {
-            lines.push(String::from(categories));
+            lines.push(categories.into_string());
         }
         lines.push("END:VEVENT\r\n".to_owned());
         lines.join("")
@@ -172,6 +172,11 @@ impl EventBuilder {
             dtend: None,
             categories: Vec::new(),
         }
+    }
+
+    pub fn add_categories(mut self, categories: Categories) -> Self {
+        self.categories.push(categories);
+        self
     }
 
     pub fn build(self) -> Result<Event, EventError> {

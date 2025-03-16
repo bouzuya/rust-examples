@@ -17,24 +17,13 @@ enum ErrorInner {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Categories(Vec<Text>);
 
-impl From<Categories> for String {
-    fn from(value: Categories) -> String {
-        format!(
-            "CATEGORIES:{}\r\n",
-            value
-                .0
-                .into_iter()
-                .map(String::from)
-                .collect::<Vec<String>>()
-                .join(",")
-        )
+impl Categories {
+    // TODO: what is value?
+    pub fn from_value(value: &str) -> Result<Self, CategoriesError> {
+        Self::from_string(format!("CATEGORIES:{}\r\n", value))
     }
-}
 
-impl TryFrom<String> for Categories {
-    type Error = CategoriesError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, CategoriesError> {
         if value.starts_with("CATEGORIES:") && value.ends_with("\r\n") {
             Ok(value
                 .trim_start_matches("CATEGORIES:")
@@ -50,6 +39,17 @@ impl TryFrom<String> for Categories {
             Err(ErrorInner::InvalidFormat)?
         }
     }
+
+    pub(in crate::i_calendar) fn into_string(self) -> String {
+        format!(
+            "CATEGORIES:{}\r\n",
+            self.0
+                .into_iter()
+                .map(String::from)
+                .collect::<Vec<String>>()
+                .join(",")
+        )
+    }
 }
 
 #[cfg(test)]
@@ -62,13 +62,20 @@ mod tests {
         assert_fn::<Categories>();
 
         let s = "CATEGORIES:APPOINTMENT,EDUCATION\r\n".to_owned();
-        assert_eq!(String::from(Categories::try_from(s.clone())?), s);
+        assert_eq!(Categories::from_string(s.clone())?.into_string(), s);
 
         let s = "CATEGORIES:MEETING\r\n".to_owned();
-        assert_eq!(String::from(Categories::try_from(s.clone())?), s);
+        assert_eq!(Categories::from_string(s.clone())?.into_string(), s);
 
         let s = "CATEGORIES:MEETING".to_owned();
-        assert!(Categories::try_from(s).is_err());
+        assert!(Categories::from_string(s).is_err());
+
+        let s = "APPOINTMENT,EDUCATION";
+        assert_eq!(
+            Categories::from_value(s)?.into_string(),
+            "CATEGORIES:APPOINTMENT,EDUCATION\r\n"
+        );
+
         Ok(())
     }
 }

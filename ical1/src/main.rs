@@ -167,9 +167,9 @@ mod tests {
     #[test]
     fn test_i_calendar_stream() -> anyhow::Result<()> {
         use i_calendar::{
-            CalendarScale, Classification, DateTimeEnd, DateTimeStamp, DateTimeStart, Event,
-            ICalendarObject, ICalendarStream, Method, ProductIdentifier, Summary, UniqueIdentifier,
-            Version,
+            CalendarScale, Categories, Classification, DateTimeEnd, DateTimeStamp, DateTimeStart,
+            Event, ICalendarObject, ICalendarStream, Method, ProductIdentifier, Summary,
+            UniqueIdentifier, Version,
         };
         let i_calendar_stream = ICalendarStream::builder()
             .add_object(
@@ -190,21 +190,8 @@ mod tests {
                             .dtend(DateTimeEnd::from_value("19970903T190000Z")?)
                             .summary(Summary::from_value("Annual Employee Review")?)
                             .class(Classification::from_value("PRIVATE")?)
+                            .add_categories(Categories::from_value("BUSINESS,HUMAN RESOURCES")?)
                             .build()?,
-                        // Event::try_from(
-                        //     [
-                        //         "BEGIN:VEVENT\r\n",
-                        //         "UID:19970901T130000Z-123401@example.com\r\n",
-                        //         "DTSTAMP:19970901T130000Z\r\n",
-                        //         "DTSTART:19970903T163000Z\r\n",
-                        //         "DTEND:19970903T190000Z\r\n",
-                        //         "SUMMARY:Annual Employee Review\r\n",
-                        //         "CLASS:PRIVATE\r\n",
-                        //         "CATEGORIES:BUSINESS,HUMAN RESOURCES\r\n",
-                        //         "END:VEVENT\r\n",
-                        //     ]
-                        //     .join(""),
-                        // )?,
                     )
                     .build()?,
             )

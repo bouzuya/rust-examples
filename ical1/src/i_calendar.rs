@@ -17,6 +17,7 @@ pub use self::calendar_properties::Method;
 pub use self::calendar_properties::Version;
 pub use self::component::Event;
 pub use self::component::EventError;
+pub use self::property::Categories;
 pub use self::property::Classification;
 pub use self::property::DateTimeEnd;
 pub use self::property::DateTimeStamp;
