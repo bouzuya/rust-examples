@@ -23,9 +23,9 @@ impl Summary {
         Self::from_string(format!("SUMMARY:{}\r\n", value))
     }
 
-    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, SummaryError> {
-        if value.starts_with("SUMMARY:") && value.ends_with("\r\n") {
-            let text = value
+    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, SummaryError> {
+        if s.starts_with("SUMMARY:") && s.ends_with("\r\n") {
+            let text = s
                 .trim_start_matches("SUMMARY:")
                 .trim_end_matches("\r\n")
                 .to_owned();

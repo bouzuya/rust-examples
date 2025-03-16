@@ -26,11 +26,9 @@ impl ProductIdentifier {
         Self::from_string(format!("PRODID:{}\r\n", s))
     }
 
-    pub(in crate::i_calendar) fn from_string(
-        value: String,
-    ) -> Result<Self, ProductIdentifierError> {
-        if value.starts_with("PRODID:") && value.ends_with("\r\n") {
-            let text = value
+    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, ProductIdentifierError> {
+        if s.starts_with("PRODID:") && s.ends_with("\r\n") {
+            let text = s
                 .trim_start_matches("PRODID:")
                 .trim_end_matches("\r\n")
                 .to_owned();

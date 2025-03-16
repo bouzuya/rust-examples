@@ -24,9 +24,9 @@ impl DateTimeStart {
         Self::from_string(format!("DTSTART:{}\r\n", value))
     }
 
-    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, DateTimeStartError> {
-        if value.starts_with("DTSTART:") && value.ends_with("\r\n") {
-            let date_time = value
+    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, DateTimeStartError> {
+        if s.starts_with("DTSTART:") && s.ends_with("\r\n") {
+            let date_time = s
                 .trim_start_matches("DTSTART:")
                 .trim_end_matches("\r\n")
                 .to_owned();

@@ -26,11 +26,10 @@ impl Version {
         Self::from_string(format!("VERSION:{}\r\n", s))
     }
 
-    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, VersionError> {
-        if value.starts_with("VERSION:") && value.ends_with("\r\n") {
+    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, VersionError> {
+        if s.starts_with("VERSION:") && s.ends_with("\r\n") {
             Ok(Text::try_from(
-                value
-                    .trim_start_matches("VERSION:")
+                s.trim_start_matches("VERSION:")
                     .trim_end_matches("\r\n")
                     .to_owned(),
             )

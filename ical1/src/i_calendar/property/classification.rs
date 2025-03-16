@@ -23,9 +23,9 @@ impl Classification {
         Self::from_string(format!("CLASS:{}\r\n", value))
     }
 
-    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, ClassificationError> {
-        if value.starts_with("CLASS:") && value.ends_with("\r\n") {
-            let text = value
+    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, ClassificationError> {
+        if s.starts_with("CLASS:") && s.ends_with("\r\n") {
+            let text = s
                 .trim_start_matches("CLASS:")
                 .trim_end_matches("\r\n")
                 .to_owned();

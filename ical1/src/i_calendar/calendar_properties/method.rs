@@ -26,11 +26,10 @@ impl Method {
         Self::from_string(format!("METHOD:{}\r\n", s))
     }
 
-    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, MethodError> {
-        if value.starts_with("METHOD:") && value.ends_with("\r\n") {
+    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, MethodError> {
+        if s.starts_with("METHOD:") && s.ends_with("\r\n") {
             Ok(Text::try_from(
-                value
-                    .trim_start_matches("METHOD:")
+                s.trim_start_matches("METHOD:")
                     .trim_end_matches("\r\n")
                     .to_owned(),
             )

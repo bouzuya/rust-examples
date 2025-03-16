@@ -26,8 +26,8 @@ impl CalendarScale {
         Self::from_string(format!("CALSCALE:{}\r\n", s))
     }
 
-    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, CalendarScaleError> {
-        if value == "CALSCALE:GREGORIAN\r\n" {
+    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, CalendarScaleError> {
+        if s == "CALSCALE:GREGORIAN\r\n" {
             Ok(Self(
                 Text::try_from("GREGORIAN".to_owned()).map_err(ErrorInner::Text)?,
             ))

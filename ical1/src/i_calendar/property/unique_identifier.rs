@@ -23,9 +23,9 @@ impl UniqueIdentifier {
         Self::from_string(format!("UID:{}\r\n", s))
     }
 
-    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, UniqueIdentifierError> {
-        if value.starts_with("UID:") && value.ends_with("\r\n") {
-            let text = value
+    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, UniqueIdentifierError> {
+        if s.starts_with("UID:") && s.ends_with("\r\n") {
+            let text = s
                 .trim_start_matches("UID:")
                 .trim_end_matches("\r\n")
                 .to_owned();

@@ -23,10 +23,9 @@ impl Categories {
         Self::from_string(format!("CATEGORIES:{}\r\n", value))
     }
 
-    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, CategoriesError> {
-        if value.starts_with("CATEGORIES:") && value.ends_with("\r\n") {
-            Ok(value
-                .trim_start_matches("CATEGORIES:")
+    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, CategoriesError> {
+        if s.starts_with("CATEGORIES:") && s.ends_with("\r\n") {
+            Ok(s.trim_start_matches("CATEGORIES:")
                 .trim_end_matches("\r\n")
                 // FIXME: Text contains `"\\,"`
                 .split(',')

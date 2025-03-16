@@ -24,9 +24,9 @@ impl DateTimeEnd {
         Self::from_string(format!("DTEND:{}\r\n", value))
     }
 
-    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, DateTimeEndError> {
-        if value.starts_with("DTEND:") && value.ends_with("\r\n") {
-            let date_time = value
+    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, DateTimeEndError> {
+        if s.starts_with("DTEND:") && s.ends_with("\r\n") {
+            let date_time = s
                 .trim_start_matches("DTEND:")
                 .trim_end_matches("\r\n")
                 .to_owned();
