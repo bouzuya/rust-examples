@@ -95,7 +95,7 @@ impl Event {
                         .map_err(ErrorInner::DateTimeStart)?;
                     builder.dtstart(dtstart);
                 } else if line.starts_with("DTEND:") {
-                    let dtend = DateTimeEnd::try_from(format!("{}\r\n", line))
+                    let dtend = DateTimeEnd::from_string(format!("{}\r\n", line))
                         .map_err(ErrorInner::DateTimeEnd)?;
                     builder.dtend(Some(dtend));
                 } else if line.starts_with("SUMMARY:") {
@@ -135,7 +135,7 @@ impl Event {
         lines.push(self.dtstamp.into_string());
         lines.push(self.dtstart.into_string());
         if let Some(dtend) = self.dtend {
-            lines.push(String::from(dtend));
+            lines.push(dtend.into_string());
         }
         if let Some(summary) = self.summary {
             lines.push(String::from(summary));
@@ -176,6 +176,11 @@ impl EventBuilder {
 
     pub fn build(self) -> Result<Event, EventError> {
         Event::from_builder(self)
+    }
+
+    pub fn dtend(mut self, dtend: DateTimeEnd) -> Self {
+        self.dtend = Some(dtend);
+        self
     }
 
     pub fn dtstamp(mut self, dtstamp: DateTimeStamp) -> Self {

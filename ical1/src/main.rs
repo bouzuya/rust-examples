@@ -167,8 +167,8 @@ mod tests {
     #[test]
     fn test_i_calendar_stream() -> anyhow::Result<()> {
         use i_calendar::{
-            CalendarScale, DateTimeStamp, DateTimeStart, Event, ICalendarObject, ICalendarStream,
-            Method, ProductIdentifier, UniqueIdentifier, Version,
+            CalendarScale, DateTimeEnd, DateTimeStamp, DateTimeStart, Event, ICalendarObject,
+            ICalendarStream, Method, ProductIdentifier, UniqueIdentifier, Version,
         };
         let i_calendar_stream = ICalendarStream::builder()
             .add_object(
@@ -186,6 +186,7 @@ mod tests {
                             )?)
                             .dtstamp(DateTimeStamp::from_value("19970901T130000Z")?)
                             .dtstart(DateTimeStart::from_value("19970903T163000Z")?)
+                            .dtend(DateTimeEnd::from_value("19970903T190000Z")?)
                             .build()?,
                         // Event::try_from(
                         //     [
