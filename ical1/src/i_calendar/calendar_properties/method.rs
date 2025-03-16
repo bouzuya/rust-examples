@@ -28,7 +28,7 @@ impl Method {
 
     pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, MethodError> {
         if s.starts_with("METHOD:") && s.ends_with("\r\n") {
-            Ok(Text::try_from(
+            Ok(Text::from_string(
                 s.trim_start_matches("METHOD:")
                     .trim_end_matches("\r\n")
                     .to_owned(),
@@ -41,7 +41,7 @@ impl Method {
     }
 
     pub(in crate::i_calendar) fn into_string(self) -> String {
-        format!("METHOD:{}\r\n", String::from(self.0))
+        format!("METHOD:{}\r\n", self.0.into_string())
     }
 }
 

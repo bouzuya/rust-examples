@@ -30,7 +30,7 @@ impl Categories {
                 // FIXME: Text contains `"\\,"`
                 .split(',')
                 .map(ToOwned::to_owned)
-                .map(Text::try_from)
+                .map(Text::from_string)
                 .collect::<Result<Vec<Text>, TextError>>()
                 .map(Self)
                 .map_err(ErrorInner::Text)?)
@@ -44,7 +44,7 @@ impl Categories {
             "CATEGORIES:{}\r\n",
             self.0
                 .into_iter()
-                .map(String::from)
+                .map(Text::into_string)
                 .collect::<Vec<String>>()
                 .join(",")
         )

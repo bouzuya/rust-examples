@@ -29,14 +29,16 @@ impl Classification {
                 .trim_start_matches("CLASS:")
                 .trim_end_matches("\r\n")
                 .to_owned();
-            Ok(Text::try_from(text).map(Self).map_err(ErrorInner::Text)?)
+            Ok(Text::from_string(text)
+                .map(Self)
+                .map_err(ErrorInner::Text)?)
         } else {
             Err(ErrorInner::InvalidFormat)?
         }
     }
 
     pub(in crate::i_calendar) fn into_string(self) -> String {
-        format!("CLASS:{}\r\n", String::from(self.0))
+        format!("CLASS:{}\r\n", self.0.into_string())
     }
 }
 
