@@ -1,9 +1,10 @@
-use crate::i_calendar::{calendar_properties, component};
+use crate::i_calendar::{calendar_components, calendar_properties};
 
-pub use self::component::Event;
-pub use self::component::EventError;
+mod private {
+    pub trait IntoCalendarComponentSealed {}
+}
 
-trait IntoCalendarComponent {
+pub trait IntoCalendarComponent: private::IntoCalendarComponentSealed {
     fn into_calendar_component(self) -> CalendarComponent;
 }
 
@@ -255,10 +256,12 @@ impl WriteTo for CalendarProperties {
 /// x-comp     = "BEGIN" ":" x-name CRLF
 ///              1*contentline
 ///              "END" ":" x-name CRLF
-enum CalendarComponent {
+pub struct CalendarComponent(CalendarComponentInner);
+
+enum CalendarComponentInner {
     /// Event Component
     /// eventc
-    Event(component::Event),
+    Event(calendar_components::Event),
     /// To-Do Component
     /// todoc
     Todo(
@@ -293,28 +296,34 @@ enum CalendarComponent {
     ),
 }
 
+impl private::IntoCalendarComponentSealed for CalendarComponent {}
+
 impl IntoCalendarComponent for CalendarComponent {
     fn into_calendar_component(self) -> CalendarComponent {
         self
     }
 }
 
-impl IntoCalendarComponent for component::Event {
+impl private::IntoCalendarComponentSealed for calendar_components::Event {}
+
+impl IntoCalendarComponent for calendar_components::Event {
     fn into_calendar_component(self) -> CalendarComponent {
-        CalendarComponent::Event(self)
+        CalendarComponent(CalendarComponentInner::Event(self))
     }
 }
 
 impl WriteTo for CalendarComponent {
     fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result {
-        match self {
-            CalendarComponent::Event(event) => w.write_str(event.clone().into_string().as_str())?,
-            CalendarComponent::Todo() => todo!(),
-            CalendarComponent::Journal() => todo!(),
-            CalendarComponent::Freebusy() => todo!(),
-            CalendarComponent::Timezone() => todo!(),
-            CalendarComponent::IanaComp() => todo!(),
-            CalendarComponent::XComp() => todo!(),
+        match &self.0 {
+            CalendarComponentInner::Event(event) => {
+                w.write_str(event.clone().into_string().as_str())?
+            }
+            CalendarComponentInner::Todo() => todo!(),
+            CalendarComponentInner::Journal() => todo!(),
+            CalendarComponentInner::Freebusy() => todo!(),
+            CalendarComponentInner::Timezone() => todo!(),
+            CalendarComponentInner::IanaComp() => todo!(),
+            CalendarComponentInner::XComp() => todo!(),
         }
         Ok(())
     }
