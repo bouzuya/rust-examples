@@ -1,12 +1,14 @@
 use crate::i_calendar::{calendar_components, calendar_properties};
 
 mod private {
-    pub trait IntoCalendarComponentSealed {}
+    use super::CalendarComponent;
+
+    pub trait IntoCalendarComponentSealed {
+        fn into_calendar_component(self) -> CalendarComponent;
+    }
 }
 
-pub trait IntoCalendarComponent: private::IntoCalendarComponentSealed {
-    fn into_calendar_component(self) -> CalendarComponent;
-}
+pub trait IntoCalendarComponent: private::IntoCalendarComponentSealed {}
 
 trait WriteTo {
     fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result;
@@ -258,55 +260,55 @@ enum CalendarComponentInner {
     /// Event Component
     /// eventc
     Event(calendar_components::Event),
-    /// To-Do Component
-    /// todoc
-    Todo(
-        // TODO
-    ),
-    /// Journal Component
-    /// journalc
-    Journal(
-        // TODO
-    ),
-    /// Free/Busy Component
-    /// freebusyc
-    Freebusy(
-        // TODO
-    ),
-    /// Time Zone Component
-    /// timezonec
-    Timezone(
-        // TODO
-    ),
-    /// iana-comp  = "BEGIN" ":" iana-token CRLF
-    ///              1*contentline
-    ///              "END" ":" iana-token CRLF
-    IanaComp(
-        // TODO
-    ),
-    /// x-comp     = "BEGIN" ":" x-name CRLF
-    ///              1*contentline
-    ///              "END" ":" x-name CRLF
-    XComp(
-        // TODO
-    ),
+    // /// To-Do Component
+    // /// todoc
+    // Todo(
+    //     // TODO
+    // ),
+    // /// Journal Component
+    // /// journalc
+    // Journal(
+    //     // TODO
+    // ),
+    // /// Free/Busy Component
+    // /// freebusyc
+    // Freebusy(
+    //     // TODO
+    // ),
+    // /// Time Zone Component
+    // /// timezonec
+    // Timezone(
+    //     // TODO
+    // ),
+    // /// iana-comp  = "BEGIN" ":" iana-token CRLF
+    // ///              1*contentline
+    // ///              "END" ":" iana-token CRLF
+    // IanaComp(
+    //     // TODO
+    // ),
+    // /// x-comp     = "BEGIN" ":" x-name CRLF
+    // ///              1*contentline
+    // ///              "END" ":" x-name CRLF
+    // XComp(
+    //     // TODO
+    // ),
 }
 
-impl private::IntoCalendarComponentSealed for CalendarComponent {}
-
-impl IntoCalendarComponent for CalendarComponent {
+impl private::IntoCalendarComponentSealed for CalendarComponent {
     fn into_calendar_component(self) -> CalendarComponent {
         self
     }
 }
 
-impl private::IntoCalendarComponentSealed for calendar_components::Event {}
+impl IntoCalendarComponent for CalendarComponent {}
 
-impl IntoCalendarComponent for calendar_components::Event {
+impl private::IntoCalendarComponentSealed for calendar_components::Event {
     fn into_calendar_component(self) -> CalendarComponent {
         CalendarComponent(CalendarComponentInner::Event(self))
     }
 }
+
+impl IntoCalendarComponent for calendar_components::Event {}
 
 impl WriteTo for CalendarComponent {
     fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result {
@@ -314,12 +316,6 @@ impl WriteTo for CalendarComponent {
             CalendarComponentInner::Event(event) => {
                 w.write_str(event.clone().into_string().as_str())?
             }
-            CalendarComponentInner::Todo() => todo!(),
-            CalendarComponentInner::Journal() => todo!(),
-            CalendarComponentInner::Freebusy() => todo!(),
-            CalendarComponentInner::Timezone() => todo!(),
-            CalendarComponentInner::IanaComp() => todo!(),
-            CalendarComponentInner::XComp() => todo!(),
         }
         Ok(())
     }
