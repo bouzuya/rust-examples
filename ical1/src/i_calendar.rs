@@ -2,6 +2,7 @@ mod calendar_components;
 mod calendar_properties;
 mod i_calendar_object;
 mod property;
+mod utils;
 mod value_type;
 
 pub use self::calendar_components::Event;
