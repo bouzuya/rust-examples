@@ -3,6 +3,10 @@ use crate::i_calendar::{calendar_properties, component};
 pub use self::component::Event;
 pub use self::component::EventError;
 
+trait IntoCalendarComponent {
+    fn into_calendar_component(self) -> CalendarComponent;
+}
+
 trait WriteTo {
     fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result;
 }
@@ -155,8 +159,8 @@ impl ICalendarObjectBuilder {
         }
     }
 
-    pub fn add_component(mut self, component: CalendarComponent) -> Self {
-        self.component.push(component);
+    pub fn add_component<C: IntoCalendarComponent>(mut self, component: C) -> Self {
+        self.component.push(component.into_calendar_component());
         self
     }
 
@@ -251,7 +255,7 @@ impl WriteTo for CalendarProperties {
 /// x-comp     = "BEGIN" ":" x-name CRLF
 ///              1*contentline
 ///              "END" ":" x-name CRLF
-pub enum CalendarComponent {
+enum CalendarComponent {
     /// Event Component
     /// eventc
     Event(component::Event),
@@ -289,10 +293,22 @@ pub enum CalendarComponent {
     ),
 }
 
+impl IntoCalendarComponent for CalendarComponent {
+    fn into_calendar_component(self) -> CalendarComponent {
+        self
+    }
+}
+
+impl IntoCalendarComponent for component::Event {
+    fn into_calendar_component(self) -> CalendarComponent {
+        CalendarComponent::Event(self)
+    }
+}
+
 impl WriteTo for CalendarComponent {
     fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result {
         match self {
-            CalendarComponent::Event(event) => w.write_str(String::from(event.clone()).as_str())?,
+            CalendarComponent::Event(event) => w.write_str(event.clone().into_string().as_str())?,
             CalendarComponent::Todo() => todo!(),
             CalendarComponent::Journal() => todo!(),
             CalendarComponent::Freebusy() => todo!(),

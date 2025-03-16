@@ -1,57 +1,6 @@
 mod i_calendar;
 
 fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let i_calendar_stream = i_calendar::ICalendarStream::builder()
-        .add_object(
-            i_calendar::ICalendarObject::builder()
-                .prodid(i_calendar::ProductIdentifier::from_value(
-                    "-//ABC Corporation//NONSGML My Product//EN",
-                )?)
-                .version(i_calendar::Version::from_value("2.0")?)
-                .calscale(i_calendar::CalendarScale::from_value("GREGORIAN")?)
-                .method(i_calendar::Method::from_value("PUBLISH")?)
-                .add_component(
-                    // TODO: Component::new
-                    i_calendar::CalendarComponent::Event(i_calendar::Event::try_from(
-                        [
-                            "BEGIN:VEVENT\r\n",
-                            "UID:19970901T130000Z-123401@example.com\r\n",
-                            "DTSTAMP:19970901T130000Z\r\n",
-                            "DTSTART:19970903T163000Z\r\n",
-                            "DTEND:19970903T190000Z\r\n",
-                            "SUMMARY:Annual Employee Review\r\n",
-                            "CLASS:PRIVATE\r\n",
-                            "CATEGORIES:BUSINESS,HUMAN RESOURCES\r\n",
-                            "END:VEVENT\r\n",
-                        ]
-                        .join(""),
-                    )?),
-                )
-                .build()?,
-        )
-        .build()?;
-    assert_eq!(
-        i_calendar_stream.to_string(),
-        [
-            "BEGIN:VCALENDAR\r\n",
-            "PRODID:-//ABC Corporation//NONSGML My Product//EN\r\n",
-            "VERSION:2.0\r\n",
-            "CALSCALE:GREGORIAN\r\n",
-            "METHOD:PUBLISH\r\n",
-            "BEGIN:VEVENT\r\n",
-            "UID:19970901T130000Z-123401@example.com\r\n",
-            "DTSTAMP:19970901T130000Z\r\n",
-            "DTSTART:19970903T163000Z\r\n",
-            "DTEND:19970903T190000Z\r\n",
-            "SUMMARY:Annual Employee Review\r\n",
-            "CLASS:PRIVATE\r\n",
-            "CATEGORIES:BUSINESS,HUMAN RESOURCES\r\n",
-            "END:VEVENT\r\n",
-            "END:VCALENDAR\r\n"
-        ]
-        .join("")
-    );
-
     let mut cal = ical::generator::IcalCalendarBuilder::version("2.0")
         .gregorian()
         .prodid("prodid1")
@@ -213,5 +162,64 @@ mod tests {
             ),
             "1234567890:234567890123456789012345678901234567890123456789012345678901234567890\r\n"
         );
+    }
+
+    #[test]
+    fn test_i_calendar_stream() -> anyhow::Result<()> {
+        use i_calendar::{
+            CalendarScale, Event, ICalendarObject, ICalendarStream, Method, ProductIdentifier,
+            Version,
+        };
+        let i_calendar_stream = ICalendarStream::builder()
+            .add_object(
+                ICalendarObject::builder()
+                    .prodid(ProductIdentifier::from_value(
+                        "-//ABC Corporation//NONSGML My Product//EN",
+                    )?)
+                    .version(Version::from_value("2.0")?)
+                    .calscale(CalendarScale::from_value("GREGORIAN")?)
+                    .method(Method::from_value("PUBLISH")?)
+                    .add_component(
+                        Event::builder().build()?,
+                        // Event::try_from(
+                        //     [
+                        //         "BEGIN:VEVENT\r\n",
+                        //         "UID:19970901T130000Z-123401@example.com\r\n",
+                        //         "DTSTAMP:19970901T130000Z\r\n",
+                        //         "DTSTART:19970903T163000Z\r\n",
+                        //         "DTEND:19970903T190000Z\r\n",
+                        //         "SUMMARY:Annual Employee Review\r\n",
+                        //         "CLASS:PRIVATE\r\n",
+                        //         "CATEGORIES:BUSINESS,HUMAN RESOURCES\r\n",
+                        //         "END:VEVENT\r\n",
+                        //     ]
+                        //     .join(""),
+                        // )?,
+                    )
+                    .build()?,
+            )
+            .build()?;
+        assert_eq!(
+            i_calendar_stream.to_string(),
+            [
+                "BEGIN:VCALENDAR\r\n",
+                "PRODID:-//ABC Corporation//NONSGML My Product//EN\r\n",
+                "VERSION:2.0\r\n",
+                "CALSCALE:GREGORIAN\r\n",
+                "METHOD:PUBLISH\r\n",
+                "BEGIN:VEVENT\r\n",
+                "UID:19970901T130000Z-123401@example.com\r\n",
+                "DTSTAMP:19970901T130000Z\r\n",
+                "DTSTART:19970903T163000Z\r\n",
+                "DTEND:19970903T190000Z\r\n",
+                "SUMMARY:Annual Employee Review\r\n",
+                "CLASS:PRIVATE\r\n",
+                "CATEGORIES:BUSINESS,HUMAN RESOURCES\r\n",
+                "END:VEVENT\r\n",
+                "END:VCALENDAR\r\n"
+            ]
+            .join("")
+        );
+        Ok(())
     }
 }
