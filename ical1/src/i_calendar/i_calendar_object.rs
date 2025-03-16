@@ -68,6 +68,10 @@ impl ICalendarStreamBuilder {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+#[error("iCalendar object")]
+pub struct ICalendarObjectError;
+
 /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.4>
 /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.6>
 /// icalobject = "BEGIN" ":" "VCALENDAR" CRLF
@@ -93,11 +97,21 @@ impl ICalendarObject {
         ICalendarObjectBuilder::new()
     }
 
-    fn new(calprops: CalendarProperties, component: Vec<CalendarComponent>) -> Self {
-        assert!(!component.is_empty());
-        Self {
-            calprops,
-            component,
+    fn from_builder(builder: ICalendarObjectBuilder) -> Result<Self, ICalendarObjectError> {
+        if builder.component.is_empty() {
+            return Err(ICalendarObjectError);
+        }
+        match (builder.prodid, builder.version) {
+            (Some(prodid), Some(version)) => Ok(Self {
+                calprops: CalendarProperties {
+                    prodid,
+                    version,
+                    calscale: builder.calscale,
+                    method: builder.method,
+                },
+                component: builder.component,
+            }),
+            _ => Err(ICalendarObjectError),
         }
     }
 }
@@ -113,10 +127,6 @@ impl WriteTo for ICalendarObject {
         Ok(())
     }
 }
-
-#[derive(Debug, thiserror::Error)]
-#[error("iCalendar object builder")]
-pub struct ICalendarObjectBuilderError;
 
 pub struct ICalendarObjectBuilder {
     // calprops
@@ -142,22 +152,8 @@ impl ICalendarObjectBuilder {
         }
     }
 
-    pub fn build(self) -> Result<ICalendarObject, ICalendarObjectBuilderError> {
-        if self.component.is_empty() {
-            return Err(ICalendarObjectBuilderError);
-        }
-        match (self.prodid, self.version) {
-            (Some(prodid), Some(version)) => Ok(ICalendarObject::new(
-                CalendarProperties {
-                    prodid,
-                    version,
-                    calscale: self.calscale,
-                    method: self.method,
-                },
-                self.component,
-            )),
-            _ => Err(ICalendarObjectBuilderError),
-        }
+    pub fn build(self) -> Result<ICalendarObject, ICalendarObjectError> {
+        ICalendarObject::from_builder(self)
     }
 
     pub fn add_component<C: IntoCalendarComponent>(mut self, component: C) -> Self {

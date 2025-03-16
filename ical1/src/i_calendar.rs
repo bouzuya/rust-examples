@@ -15,7 +15,7 @@ pub use self::calendar_properties::ProductIdentifierError;
 pub use self::calendar_properties::Version;
 pub use self::calendar_properties::VersionError;
 pub use self::i_calendar_object::ICalendarObject;
-pub use self::i_calendar_object::ICalendarObjectBuilderError;
+pub use self::i_calendar_object::ICalendarObjectError;
 pub use self::i_calendar_object::ICalendarStream;
 pub use self::i_calendar_object::ICalendarStreamBuilderError;
 pub use self::property::Categories;
