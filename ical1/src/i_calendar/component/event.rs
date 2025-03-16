@@ -99,8 +99,8 @@ impl Event {
                         .map_err(ErrorInner::DateTimeEnd)?;
                     builder.dtend(Some(dtend));
                 } else if line.starts_with("SUMMARY:") {
-                    let summary =
-                        Summary::try_from(format!("{}\r\n", line)).map_err(ErrorInner::Summary)?;
+                    let summary = Summary::from_string(format!("{}\r\n", line))
+                        .map_err(ErrorInner::Summary)?;
                     builder.summary(Some(summary));
                 } else if line.starts_with("CLASS:") {
                     let class = Classification::try_from(format!("{}\r\n", line))
@@ -138,7 +138,7 @@ impl Event {
             lines.push(dtend.into_string());
         }
         if let Some(summary) = self.summary {
-            lines.push(String::from(summary));
+            lines.push(summary.into_string());
         }
         if let Some(class) = self.class {
             lines.push(String::from(class));
@@ -190,6 +190,11 @@ impl EventBuilder {
 
     pub fn dtstart(mut self, dtstart: DateTimeStart) -> Self {
         self.dtstart = Some(dtstart);
+        self
+    }
+
+    pub fn summary(mut self, summary: Summary) -> Self {
+        self.summary = Some(summary);
         self
     }
 

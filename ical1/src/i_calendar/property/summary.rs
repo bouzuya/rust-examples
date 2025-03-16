@@ -17,16 +17,13 @@ enum ErrorInner {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Summary(Text);
 
-impl From<Summary> for String {
-    fn from(value: Summary) -> String {
-        format!("SUMMARY:{}\r\n", String::from(value.0))
+impl Summary {
+    // TODO: what is value?
+    pub fn from_value(value: &str) -> Result<Self, SummaryError> {
+        Self::from_string(format!("SUMMARY:{}\r\n", value))
     }
-}
 
-impl TryFrom<String> for Summary {
-    type Error = SummaryError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, SummaryError> {
         if value.starts_with("SUMMARY:") && value.ends_with("\r\n") {
             let text = value
                 .trim_start_matches("SUMMARY:")
@@ -36,6 +33,10 @@ impl TryFrom<String> for Summary {
         } else {
             Err(ErrorInner::InvalidFormat)?
         }
+    }
+
+    pub(in crate::i_calendar) fn into_string(self) -> String {
+        format!("SUMMARY:{}\r\n", String::from(self.0))
     }
 }
 
@@ -49,10 +50,16 @@ mod tests {
         assert_fn::<Summary>();
 
         let s = "SUMMARY:Department Party\r\n".to_owned();
-        assert_eq!(String::from(Summary::try_from(s.clone())?), s);
+        assert_eq!(Summary::from_string(s.clone())?.into_string(), s);
 
         let s = "SUMMARY:Department Party".to_owned();
-        assert!(Summary::try_from(s).is_err());
+        assert!(Summary::from_string(s).is_err());
+
+        let s = "Department Party";
+        assert_eq!(
+            Summary::from_value(s)?.into_string(),
+            "SUMMARY:Department Party\r\n"
+        );
         Ok(())
     }
 }

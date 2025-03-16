@@ -20,4 +20,5 @@ pub use self::component::EventError;
 pub use self::property::DateTimeEnd;
 pub use self::property::DateTimeStamp;
 pub use self::property::DateTimeStart;
+pub use self::property::Summary;
 pub use self::property::UniqueIdentifier;
