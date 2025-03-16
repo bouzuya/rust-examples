@@ -91,7 +91,7 @@ impl Event {
                         .map_err(ErrorInner::DateTimeStamp)?;
                     builder.dtstamp(dtstamp);
                 } else if line.starts_with("DTSTART:") {
-                    let dtstart = DateTimeStart::try_from(format!("{}\r\n", line))
+                    let dtstart = DateTimeStart::from_string(format!("{}\r\n", line))
                         .map_err(ErrorInner::DateTimeStart)?;
                     builder.dtstart(dtstart);
                 } else if line.starts_with("DTEND:") {
@@ -133,7 +133,7 @@ impl Event {
         lines.push("BEGIN:VEVENT\r\n".to_owned());
         lines.push(self.uid.into_string());
         lines.push(self.dtstamp.into_string());
-        lines.push(String::from(self.dtstart));
+        lines.push(self.dtstart.into_string());
         if let Some(dtend) = self.dtend {
             lines.push(String::from(dtend));
         }
@@ -180,6 +180,11 @@ impl EventBuilder {
 
     pub fn dtstamp(mut self, dtstamp: DateTimeStamp) -> Self {
         self.dtstamp = Some(dtstamp);
+        self
+    }
+
+    pub fn dtstart(mut self, dtstart: DateTimeStart) -> Self {
+        self.dtstart = Some(dtstart);
         self
     }
 

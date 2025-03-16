@@ -18,16 +18,13 @@ enum ErrorInner {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct DateTimeStart(DateTime);
 
-impl From<DateTimeStart> for String {
-    fn from(value: DateTimeStart) -> String {
-        format!("DTSTART:{}\r\n", String::from(value.0))
+impl DateTimeStart {
+    // TODO: what is value?
+    pub fn from_value(value: &str) -> Result<Self, DateTimeStartError> {
+        Self::from_string(format!("DTSTART:{}\r\n", value))
     }
-}
 
-impl TryFrom<String> for DateTimeStart {
-    type Error = DateTimeStartError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, DateTimeStartError> {
         if value.starts_with("DTSTART:") && value.ends_with("\r\n") {
             let date_time = value
                 .trim_start_matches("DTSTART:")
@@ -39,6 +36,10 @@ impl TryFrom<String> for DateTimeStart {
         } else {
             Err(ErrorInner::InvalidFormat)?
         }
+    }
+
+    pub(in crate::i_calendar) fn into_string(self) -> String {
+        format!("DTSTART:{}\r\n", String::from(self.0))
     }
 }
 
@@ -52,10 +53,16 @@ mod tests {
         assert_fn::<DateTimeStart>();
 
         let s = "DTSTART:19980118T073000Z\r\n".to_owned();
-        assert_eq!(String::from(DateTimeStart::try_from(s.clone())?), s);
+        assert_eq!(DateTimeStart::from_string(s.clone())?.into_string(), s);
 
         let s = "DTSTART:19980118T073000Z".to_owned();
-        assert!(DateTimeStart::try_from(s).is_err());
+        assert!(DateTimeStart::from_string(s).is_err());
+
+        let s = "19980118T073000Z";
+        assert_eq!(
+            DateTimeStart::from_value(s)?.into_string(),
+            "DTSTART:19980118T073000Z\r\n"
+        );
         Ok(())
     }
 }
