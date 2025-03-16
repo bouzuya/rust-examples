@@ -103,7 +103,7 @@ impl Event {
                         .map_err(ErrorInner::Summary)?;
                     builder.summary(Some(summary));
                 } else if line.starts_with("CLASS:") {
-                    let class = Classification::try_from(format!("{}\r\n", line))
+                    let class = Classification::from_string(format!("{}\r\n", line))
                         .map_err(ErrorInner::Classification)?;
                     builder.class(Some(class));
                 } else if line.starts_with("CATEGORIES:") {
@@ -141,7 +141,7 @@ impl Event {
             lines.push(summary.into_string());
         }
         if let Some(class) = self.class {
-            lines.push(String::from(class));
+            lines.push(class.into_string());
         }
         for categories in self.categories {
             lines.push(String::from(categories));
@@ -176,6 +176,11 @@ impl EventBuilder {
 
     pub fn build(self) -> Result<Event, EventError> {
         Event::from_builder(self)
+    }
+
+    pub fn class(mut self, class: Classification) -> Self {
+        self.class = Some(class);
+        self
     }
 
     pub fn dtend(mut self, dtend: DateTimeEnd) -> Self {

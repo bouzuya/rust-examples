@@ -17,16 +17,13 @@ enum ErrorInner {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Classification(Text);
 
-impl From<Classification> for String {
-    fn from(value: Classification) -> String {
-        format!("CLASS:{}\r\n", String::from(value.0))
+impl Classification {
+    // TODO: what is value?
+    pub fn from_value(value: &str) -> Result<Self, ClassificationError> {
+        Self::from_string(format!("CLASS:{}\r\n", value))
     }
-}
 
-impl TryFrom<String> for Classification {
-    type Error = ClassificationError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, ClassificationError> {
         if value.starts_with("CLASS:") && value.ends_with("\r\n") {
             let text = value
                 .trim_start_matches("CLASS:")
@@ -36,6 +33,10 @@ impl TryFrom<String> for Classification {
         } else {
             Err(ErrorInner::InvalidFormat)?
         }
+    }
+
+    pub(in crate::i_calendar) fn into_string(self) -> String {
+        format!("CLASS:{}\r\n", String::from(self.0))
     }
 }
 
@@ -49,10 +50,17 @@ mod tests {
         assert_fn::<Classification>();
 
         let s = "CLASS:PUBLIC\r\n".to_owned();
-        assert_eq!(String::from(Classification::try_from(s.clone())?), s);
+        assert_eq!(Classification::from_string(s.clone())?.into_string(), s);
 
         let s = "CLASS:PUBLIC".to_owned();
-        assert!(Classification::try_from(s).is_err());
+        assert!(Classification::from_string(s).is_err());
+
+        let s = "PUBLIC";
+        assert_eq!(
+            Classification::from_value(s)?.into_string(),
+            "CLASS:PUBLIC\r\n"
+        );
+
         Ok(())
     }
 }
