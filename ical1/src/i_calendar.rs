@@ -17,3 +17,4 @@ pub use self::calendar_properties::Method;
 pub use self::calendar_properties::Version;
 pub use self::component::Event;
 pub use self::component::EventError;
+pub use self::property::UniqueIdentifier;

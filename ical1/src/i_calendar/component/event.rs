@@ -83,7 +83,7 @@ impl Event {
             let mut builder = PrivateEventBuilder::default();
             for line in lines {
                 if line.starts_with("UID:") {
-                    let uid = UniqueIdentifier::try_from(format!("{}\r\n", line))
+                    let uid = UniqueIdentifier::from_string(format!("{}\r\n", line))
                         .map_err(ErrorInner::UniqueIdentifier)?;
                     builder.uid(uid);
                 } else if line.starts_with("DTSTAMP:") {
@@ -131,7 +131,7 @@ impl Event {
     pub(in crate::i_calendar) fn into_string(self) -> String {
         let mut lines = vec![];
         lines.push("BEGIN:VEVENT\r\n".to_owned());
-        lines.push(String::from(self.uid));
+        lines.push(self.uid.into_string());
         lines.push(String::from(self.dtstamp));
         lines.push(String::from(self.dtstart));
         if let Some(dtend) = self.dtend {
@@ -176,6 +176,11 @@ impl EventBuilder {
 
     pub fn build(self) -> Result<Event, EventError> {
         Event::from_builder(self)
+    }
+
+    pub fn uid(mut self, uid: UniqueIdentifier) -> Self {
+        self.uid = Some(uid);
+        self
     }
 }
 

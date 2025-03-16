@@ -17,16 +17,13 @@ enum ErrorInner {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct UniqueIdentifier(Text);
 
-impl From<UniqueIdentifier> for String {
-    fn from(value: UniqueIdentifier) -> String {
-        format!("UID:{}\r\n", String::from(value.0))
+impl UniqueIdentifier {
+    // TODO: what is value?
+    pub fn from_value(s: &str) -> Result<Self, UniqueIdentifierError> {
+        Self::from_string(format!("UID:{}\r\n", s))
     }
-}
 
-impl TryFrom<String> for UniqueIdentifier {
-    type Error = UniqueIdentifierError;
-
-    fn try_from(value: String) -> Result<Self, Self::Error> {
+    pub fn from_string(value: String) -> Result<Self, UniqueIdentifierError> {
         if value.starts_with("UID:") && value.ends_with("\r\n") {
             let text = value
                 .trim_start_matches("UID:")
@@ -36,6 +33,10 @@ impl TryFrom<String> for UniqueIdentifier {
         } else {
             Err(ErrorInner::InvalidFormat)?
         }
+    }
+
+    pub(in crate::i_calendar) fn into_string(self) -> String {
+        format!("UID:{}\r\n", String::from(self.0))
     }
 }
 
@@ -49,7 +50,17 @@ mod tests {
         assert_fn::<UniqueIdentifier>();
 
         let s = "UID:19960401T080045Z-4000F192713-0052@example.com\r\n".to_owned();
-        assert_eq!(String::from(UniqueIdentifier::try_from(s.clone())?), s);
+        assert_eq!(UniqueIdentifier::from_string(s.clone())?.into_string(), s);
+
+        let s = "UID:19960401T080045Z-4000F192713-0052@example.com".to_owned();
+        assert!(UniqueIdentifier::from_string(s.clone()).is_err());
+
+        let s = "19960401T080045Z-4000F192713-0052@example.com";
+        assert_eq!(
+            UniqueIdentifier::from_value(s)?.into_string(),
+            "UID:19960401T080045Z-4000F192713-0052@example.com\r\n"
+        );
+
         Ok(())
     }
 }

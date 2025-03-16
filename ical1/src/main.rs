@@ -168,7 +168,7 @@ mod tests {
     fn test_i_calendar_stream() -> anyhow::Result<()> {
         use i_calendar::{
             CalendarScale, Event, ICalendarObject, ICalendarStream, Method, ProductIdentifier,
-            Version,
+            UniqueIdentifier, Version,
         };
         let i_calendar_stream = ICalendarStream::builder()
             .add_object(
@@ -180,7 +180,11 @@ mod tests {
                     .calscale(CalendarScale::from_value("GREGORIAN")?)
                     .method(Method::from_value("PUBLISH")?)
                     .add_component(
-                        Event::builder().build()?,
+                        Event::builder()
+                            .uid(UniqueIdentifier::from_value(
+                                "19970901T130000Z-123401@example.com",
+                            )?)
+                            .build()?,
                         // Event::try_from(
                         //     [
                         //         "BEGIN:VEVENT\r\n",
