@@ -16,6 +16,10 @@ trait WriteTo {
     fn write_to<W: std::fmt::Write>(&self, w: &mut W) -> std::fmt::Result;
 }
 
+#[derive(Debug, thiserror::Error)]
+#[error("iCalendar stream")]
+pub struct ICalendarStreamError;
+
 /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.4>
 /// icalstream = 1*icalobject
 /// iCalendar stream
@@ -49,10 +53,6 @@ impl WriteTo for ICalendarStream {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-#[error("iCalendar stream builder")]
-pub struct ICalendarStreamBuilderError;
-
 pub struct ICalendarStreamBuilder(Vec<ICalendarObject>);
 
 impl ICalendarStreamBuilder {
@@ -65,9 +65,9 @@ impl ICalendarStreamBuilder {
         self
     }
 
-    pub fn build(self) -> Result<ICalendarStream, ICalendarStreamBuilderError> {
+    pub fn build(self) -> Result<ICalendarStream, ICalendarStreamError> {
         if self.0.is_empty() {
-            return Err(ICalendarStreamBuilderError);
+            return Err(ICalendarStreamError);
         }
 
         Ok(ICalendarStream::new(self.0))

@@ -1,5 +1,5 @@
 #[test]
-fn test_i_calendar_stream() -> anyhow::Result<()> {
+fn test_i_calendar_stream() -> Result<(), ical1::Error> {
     use ical1::{
         CalendarScale, Categories, Classification, DateTimeEnd, DateTimeStamp, DateTimeStart,
         Event, ICalendarObject, ICalendarStream, Method, ProductIdentifier, Summary,
@@ -56,7 +56,7 @@ fn test_i_calendar_stream() -> anyhow::Result<()> {
 }
 
 #[test]
-fn test_i_calendar_stream_minimum() -> anyhow::Result<()> {
+fn test_i_calendar_stream_minimum() -> Result<(), ical1::Error> {
     use ical1::{
         DateTimeStamp, DateTimeStart, Event, ICalendarObject, ICalendarStream, ProductIdentifier,
         UniqueIdentifier, Version,
