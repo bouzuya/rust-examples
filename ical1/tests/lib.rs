@@ -2,9 +2,10 @@
 fn test_i_calendar_stream() -> Result<(), ical1::Error> {
     use ical1::{
         CalendarScale, Categories, Classification, DateTimeEnd, DateTimeStamp, DateTimeStart,
-        Event, ICalendarObject, ICalendarStream, Method, ProductIdentifier, Summary,
+        Event, ICalendarObject, ICalendarStream, Method, ProductIdentifier, Summary, Text,
         UniqueIdentifier, Version,
     };
+    use std::str::FromStr as _;
 
     let i_calendar_stream = ICalendarStream::builder()
         .add_object(
@@ -13,7 +14,7 @@ fn test_i_calendar_stream() -> Result<(), ical1::Error> {
                     "-//ABC Corporation//NONSGML My Product//EN",
                 )?)
                 .version(Version::from_value("2.0")?)
-                .calscale(CalendarScale::from_value("GREGORIAN")?)
+                .calscale(CalendarScale::from_value(Text::from_str("GREGORIAN")?)?)
                 .method(Method::from_value("PUBLISH")?)
                 .add_component(
                     Event::builder()
