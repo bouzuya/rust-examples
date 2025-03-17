@@ -82,8 +82,24 @@ impl Text {
     }
 }
 
+impl std::fmt::Display for Text {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_unescaped())
+    }
+}
+
+impl std::str::FromStr for Text {
+    type Err = TextError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::from_unescaped(s)
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr as _;
+
     use super::*;
 
     #[test]
@@ -100,6 +116,25 @@ mod tests {
             ":\"\\\\\\;\\,\\n \t"
         );
         assert_eq!(Text::from_unescaped(s)?.to_unescaped(), s);
+        Ok(())
+    }
+
+    #[test]
+    fn test_string_conversion() -> anyhow::Result<()> {
+        let s = ";";
+        assert_eq!(Text::from_str(s)?.to_string(), s);
+        let unescaped = ";";
+        let escaped = "\\;";
+        assert_eq!(Text::from_unescaped(unescaped)?.to_unescaped(), unescaped);
+        assert_eq!(Text::from_unescaped(unescaped)?.into_string(), escaped);
+        assert_eq!(
+            Text::from_string(escaped.to_owned())?.to_unescaped(),
+            unescaped
+        );
+        assert_eq!(
+            Text::from_string(escaped.to_owned())?.into_string(),
+            escaped
+        );
         Ok(())
     }
 }

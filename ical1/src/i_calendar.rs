@@ -35,3 +35,5 @@ pub use self::property::Summary;
 pub use self::property::SummaryError;
 pub use self::property::UniqueIdentifier;
 pub use self::property::UniqueIdentifierError;
+pub use self::value_type::Text;
+pub use self::value_type::TextError;
