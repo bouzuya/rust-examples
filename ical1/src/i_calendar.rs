@@ -3,6 +3,7 @@ mod calendar_properties;
 mod error;
 mod i_calendar_object;
 mod property;
+mod property_parameters;
 mod utils;
 mod value_type;
 
