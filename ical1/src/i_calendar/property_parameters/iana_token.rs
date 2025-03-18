@@ -17,6 +17,10 @@ impl IanaToken {
         }
     }
 
+    pub(in crate::i_calendar) fn to_escaped(&self) -> String {
+        self.0.clone()
+    }
+
     pub(in crate::i_calendar) fn to_unescaped(&self) -> String {
         self.0.clone()
     }

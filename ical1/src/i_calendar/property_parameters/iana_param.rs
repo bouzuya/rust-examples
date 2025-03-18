@@ -29,6 +29,21 @@ impl IanaParam {
     pub fn value(&self) -> &[ParamValue] {
         &self.value
     }
+
+    pub(in crate::i_calendar) fn to_escaped(&self) -> String {
+        let mut s = String::new();
+        s.push_str(self.name.to_escaped().as_str());
+        s.push('=');
+        let mut iter = self.value.iter();
+        if let Some(v) = iter.next() {
+            s.push_str(v.to_escaped().as_str());
+        }
+        for v in iter {
+            s.push(',');
+            s.push_str(v.to_escaped().as_str());
+        }
+        s
+    }
 }
 
 #[cfg(test)]
@@ -45,6 +60,20 @@ mod tests {
         let iana_param = IanaParam::new(name.clone(), value.clone())?;
         assert_eq!(iana_param.name(), &name);
         assert_eq!(iana_param.value(), &value);
+        assert_eq!(iana_param.to_escaped(), "IANA-TOKEN=param-value");
+
+        let name = IanaToken::from_unescaped("IANA-TOKEN")?;
+        let value = vec![
+            ParamValue::from_unescaped("param-value1")?,
+            ParamValue::from_unescaped("param-value2")?,
+        ];
+        let iana_param = IanaParam::new(name.clone(), value.clone())?;
+        assert_eq!(iana_param.name(), &name);
+        assert_eq!(iana_param.value(), &value);
+        assert_eq!(
+            iana_param.to_escaped(),
+            "IANA-TOKEN=param-value1,param-value2"
+        );
 
         assert!(IanaParam::new(name.clone(), vec![]).is_err());
 
