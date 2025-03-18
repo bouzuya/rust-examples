@@ -9,7 +9,7 @@ pub struct IanaTokenError {
 pub struct IanaToken(String);
 
 impl IanaToken {
-    fn from_unescaped(s: &str) -> Result<Self, IanaTokenError> {
+    pub(in crate::i_calendar) fn from_unescaped(s: &str) -> Result<Self, IanaTokenError> {
         if s.is_empty() || !s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
             Err(IanaTokenError { _private: () })
         } else {
@@ -17,7 +17,7 @@ impl IanaToken {
         }
     }
 
-    fn to_unescaped(&self) -> String {
+    pub(in crate::i_calendar) fn to_unescaped(&self) -> String {
         self.0.clone()
     }
 }

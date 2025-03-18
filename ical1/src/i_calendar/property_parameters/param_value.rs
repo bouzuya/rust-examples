@@ -22,7 +22,7 @@ pub struct ParamValue {
 }
 
 impl ParamValue {
-    fn from_unescaped(s: &str) -> Result<Self, ParamValueError> {
+    pub(in crate::i_calendar) fn from_unescaped(s: &str) -> Result<Self, ParamValueError> {
         let mut safe_char = true;
         for c in s.chars() {
             if (c.is_ascii_control() && c != '\t') || c == '"' {
@@ -38,7 +38,7 @@ impl ParamValue {
         })
     }
 
-    fn to_escaped(&self) -> String {
+    pub(in crate::i_calendar) fn to_escaped(&self) -> String {
         if self.safe_char {
             self.s.clone()
         } else {
