@@ -14,7 +14,7 @@ fn test_i_calendar_stream() -> Result<(), ical1::Error> {
                     "-//ABC Corporation//NONSGML My Product//EN",
                 )?)
                 .version(Version::from_value("2.0")?)
-                .calscale(CalendarScale::from_value(Text::from_str("GREGORIAN")?)?)
+                .calscale(CalendarScale::new(Text::from_str("GREGORIAN")?)?)
                 .method(Method::from_value("PUBLISH")?)
                 .add_component(
                     Event::builder()

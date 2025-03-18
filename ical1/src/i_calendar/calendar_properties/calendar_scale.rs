@@ -18,21 +18,22 @@ enum ErrorInner {
     Text(#[from] TextError),
 }
 
-/// calparam not supported
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct CalendarScale;
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CalendarScale {
+    _private: (),
+}
 
 impl CalendarScale {
-    pub fn from_value(text: Text) -> Result<Self, CalendarScaleError> {
+    pub fn new(text: Text) -> Result<Self, CalendarScaleError> {
         if text.to_string() != "GREGORIAN" {
             return Err(ErrorInner::InvalidCalvalue)?;
         }
-        Ok(Self)
+        Ok(Self { _private: () })
     }
 
     pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, CalendarScaleError> {
         if s == "CALSCALE:GREGORIAN\r\n" {
-            Ok(Self)
+            Ok(Self { _private: () })
         } else {
             Err(ErrorInner::InvalidFormat)?
         }
@@ -49,7 +50,7 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        fn assert_fn<T: Clone + Eq + Ord + PartialEq + PartialOrd>() {}
+        fn assert_fn<T: Clone + Eq + PartialEq>() {}
         assert_fn::<CalendarScale>();
 
         let s = "CALSCALE:GREGORIAN\r\n".to_owned();
@@ -60,7 +61,7 @@ mod tests {
 
         let s = "GREGORIAN";
         assert_eq!(
-            CalendarScale::from_value(Text::from_unescaped(s)?)?.into_string(),
+            CalendarScale::new(Text::from_unescaped(s)?)?.into_string(),
             "CALSCALE:GREGORIAN\r\n"
         );
 
