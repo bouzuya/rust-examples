@@ -2,7 +2,10 @@
 //!
 //! <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.1>
 
-use crate::i_calendar::value_type::{Text, TextError};
+use crate::i_calendar::{
+    property_parameters::OtherParam,
+    value_type::{Text, TextError},
+};
 
 #[derive(Debug, thiserror::Error)]
 #[error("calendar scale")]
@@ -19,33 +22,54 @@ enum ErrorInner {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct CalendarScale {
-    _private: (),
-}
+pub struct CalendarScale(Vec<OtherParam>);
 
 impl CalendarScale {
-    pub fn new(text: Text) -> Result<Self, CalendarScaleError> {
-        if text.to_string() != "GREGORIAN" {
+    pub fn new(value: Text) -> Result<Self, CalendarScaleError> {
+        Self::with_parameters(value, Vec::<OtherParam>::new())
+    }
+
+    pub fn with_parameters<I>(value: Text, param: I) -> Result<Self, CalendarScaleError>
+    where
+        I: IntoIterator,
+        I::Item: Into<OtherParam>,
+    {
+        if value.to_string() != "GREGORIAN" {
             return Err(ErrorInner::InvalidCalvalue)?;
         }
-        Ok(Self { _private: () })
+        Ok(Self(
+            param
+                .into_iter()
+                .map(Into::into)
+                .collect::<Vec<OtherParam>>(),
+        ))
     }
 
     pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, CalendarScaleError> {
+        // TODO: support property parameters
         if s == "CALSCALE:GREGORIAN\r\n" {
-            Ok(Self { _private: () })
+            Ok(Self(vec![]))
         } else {
             Err(ErrorInner::InvalidFormat)?
         }
     }
 
     pub(in crate::i_calendar) fn into_string(self) -> String {
-        "CALSCALE:GREGORIAN\r\n".to_owned()
+        let mut s = String::new();
+        s.push_str("CALSCALE");
+        for p in &self.0 {
+            s.push(';');
+            s.push_str(&p.to_escaped());
+        }
+        s.push_str(":GREGORIAN\r\n");
+        s
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::i_calendar::property_parameters::{IanaParam, IanaToken, ParamValue};
+
     use super::*;
 
     #[test]
@@ -63,6 +87,18 @@ mod tests {
         assert_eq!(
             CalendarScale::new(Text::from_unescaped(s)?)?.into_string(),
             "CALSCALE:GREGORIAN\r\n"
+        );
+
+        assert_eq!(
+            CalendarScale::with_parameters(
+                Text::from_unescaped("GREGORIAN")?,
+                [IanaParam::new(
+                    IanaToken::from_unescaped("IANA-TOKEN")?,
+                    vec![ParamValue::from_unescaped("param-value")?]
+                )?]
+            )?
+            .into_string(),
+            "CALSCALE;IANA-TOKEN=param-value:GREGORIAN\r\n"
         );
 
         Ok(())
