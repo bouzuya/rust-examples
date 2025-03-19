@@ -1,4 +1,4 @@
-use crate::i_calendar::property::{
+use crate::i_calendar::component_properties::{
     Categories, CategoriesError, Classification, ClassificationError, DateTimeEnd,
     DateTimeEndError, DateTimeStamp, DateTimeStampError, DateTimeStart, DateTimeStartError,
     Summary, SummaryError, UniqueIdentifier, UniqueIdentifierError,
