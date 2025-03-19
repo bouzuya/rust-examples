@@ -3,6 +3,7 @@ mod classification;
 mod date_time_end;
 mod date_time_stamp;
 mod date_time_start;
+mod last_modified;
 mod summary;
 mod unique_identifier;
 
@@ -16,6 +17,8 @@ pub use self::date_time_stamp::DateTimeStamp;
 pub use self::date_time_stamp::DateTimeStampError;
 pub use self::date_time_start::DateTimeStart;
 pub use self::date_time_start::DateTimeStartError;
+pub use self::last_modified::LastModified;
+pub use self::last_modified::LastModifiedError;
 pub use self::summary::Summary;
 pub use self::summary::SummaryError;
 pub use self::unique_identifier::UniqueIdentifier;

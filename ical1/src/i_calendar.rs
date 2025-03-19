@@ -32,6 +32,8 @@ pub use self::property::DateTimeStamp;
 pub use self::property::DateTimeStampError;
 pub use self::property::DateTimeStart;
 pub use self::property::DateTimeStartError;
+pub use self::property::LastModified;
+pub use self::property::LastModifiedError;
 pub use self::property::Summary;
 pub use self::property::SummaryError;
 pub use self::property::UniqueIdentifier;

@@ -11,6 +11,12 @@ pub struct DateTimeError {
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub struct DateTime(String);
 
+impl DateTime {
+    pub(in crate::i_calendar) fn to_escaped(&self) -> String {
+        self.0.clone()
+    }
+}
+
 impl TryFrom<String> for DateTime {
     type Error = DateTimeError;
 
