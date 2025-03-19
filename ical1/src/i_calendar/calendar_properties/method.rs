@@ -2,6 +2,7 @@
 //!
 //! <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.2>
 
+use crate::i_calendar::property_parameters::OtherParam;
 use crate::i_calendar::value_type::{Text, TextError};
 
 #[derive(Debug, thiserror::Error)]
@@ -17,13 +18,26 @@ enum ErrorInner {
 }
 
 /// metparam not supported
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct Method(Text);
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Method(Text, Vec<OtherParam>);
 
 impl Method {
-    // TODO: what is value?
-    pub fn from_value(s: &str) -> Result<Self, MethodError> {
-        Self::from_string(format!("METHOD:{}\r\n", s))
+    pub fn new(value: Text) -> Result<Self, MethodError> {
+        Ok(Self(value, Vec::new()))
+    }
+
+    pub fn with_parameters<I>(value: Text, param: I) -> Self
+    where
+        I: IntoIterator,
+        I::Item: Into<OtherParam>,
+    {
+        Self(
+            value,
+            param
+                .into_iter()
+                .map(Into::into)
+                .collect::<Vec<OtherParam>>(),
+        )
     }
 
     pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, MethodError> {
@@ -33,7 +47,7 @@ impl Method {
                     .trim_end_matches("\r\n")
                     .to_owned(),
             )
-            .map(Self)
+            .map(|text| Self(text, Vec::new()))
             .map_err(ErrorInner::Text)?)
         } else {
             Err(ErrorInner::InvalidFormat)?
@@ -41,17 +55,28 @@ impl Method {
     }
 
     pub(in crate::i_calendar) fn into_string(self) -> String {
-        format!("METHOD:{}\r\n", self.0.into_string())
+        let mut s = String::new();
+        s.push_str("METHOD");
+        for p in &self.1 {
+            s.push(';');
+            s.push_str(&p.to_escaped());
+        }
+        s.push(':');
+        s.push_str(&self.0.to_string());
+        s.push_str("\r\n");
+        s
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::i_calendar::property_parameters::{IanaParam, IanaToken, ParamValue};
+
     use super::*;
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        fn assert_fn<T: Clone + Eq + Ord + PartialEq + PartialOrd>() {}
+        fn assert_fn<T: Clone + Eq + PartialEq>() {}
         assert_fn::<Method>();
 
         let s = "METHOD:REQUEST\r\n".to_owned();
@@ -61,7 +86,22 @@ mod tests {
         assert!(Method::from_string(s).is_err());
 
         let s = "REQUEST";
-        assert_eq!(Method::from_value(s)?.into_string(), "METHOD:REQUEST\r\n");
+        assert_eq!(
+            Method::new(Text::from_unescaped(s)?)?.into_string(),
+            "METHOD:REQUEST\r\n"
+        );
+
+        assert_eq!(
+            Method::with_parameters(
+                Text::from_unescaped("REQUEST")?,
+                [IanaParam::new(
+                    IanaToken::from_unescaped("PARAMETER")?,
+                    vec![ParamValue::from_unescaped("value")?]
+                )?]
+            )
+            .into_string(),
+            "METHOD;PARAMETER=value:REQUEST\r\n"
+        );
 
         Ok(())
     }
