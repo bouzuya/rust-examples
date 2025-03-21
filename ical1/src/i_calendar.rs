@@ -21,6 +21,8 @@ pub use self::component_properties::Categories;
 pub use self::component_properties::CategoriesError;
 pub use self::component_properties::Classification;
 pub use self::component_properties::ClassificationError;
+pub use self::component_properties::DateTimeCreated;
+pub use self::component_properties::DateTimeCreatedError;
 pub use self::component_properties::DateTimeEnd;
 pub use self::component_properties::DateTimeEndError;
 pub use self::component_properties::DateTimeStamp;
