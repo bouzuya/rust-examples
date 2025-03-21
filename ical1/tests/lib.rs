@@ -10,9 +10,9 @@ fn test_i_calendar_stream() -> Result<(), ical1::Error> {
     let i_calendar_stream = ICalendarStream::builder()
         .add_object(
             ICalendarObject::builder()
-                .prodid(ProductIdentifier::from_value(
+                .prodid(ProductIdentifier::new(Text::from_unescaped(
                     "-//ABC Corporation//NONSGML My Product//EN",
-                )?)
+                )?)?)
                 .version(Version::new(Text::from_str("2.0")?)?)
                 .calscale(CalendarScale::new(Text::from_str("GREGORIAN")?)?)
                 .method(Method::new(Text::from_str("PUBLISH")?)?)
@@ -66,9 +66,9 @@ fn test_i_calendar_stream_minimum() -> Result<(), ical1::Error> {
     let i_calendar_stream = ICalendarStream::builder()
         .add_object(
             ICalendarObject::builder()
-                .prodid(ProductIdentifier::from_value(
+                .prodid(ProductIdentifier::new(Text::from_unescaped(
                     "-//ABC Corporation//NONSGML My Product//EN",
-                )?)
+                )?)?)
                 .version(Version::new(Text::from_unescaped("2.0")?)?)
                 .add_component(
                     Event::builder()
