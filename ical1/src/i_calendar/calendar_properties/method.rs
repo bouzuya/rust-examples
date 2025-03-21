@@ -13,8 +13,6 @@ pub struct MethodError(#[from] ErrorInner);
 enum ErrorInner {
     #[error("text")]
     Text(#[from] TextError),
-    #[error("invalid format")]
-    InvalidFormat,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

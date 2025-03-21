@@ -15,8 +15,6 @@ pub struct CalendarScaleError(#[from] ErrorInner);
 enum ErrorInner {
     #[error("invalid calvalue")]
     InvalidCalvalue,
-    #[error("invalid format")]
-    InvalidFormat,
     #[error("text")]
     Text(#[from] TextError),
 }
@@ -45,16 +43,7 @@ impl CalendarScale {
         ))
     }
 
-    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, CalendarScaleError> {
-        // TODO: support property parameters
-        if s == "CALSCALE:GREGORIAN\r\n" {
-            Ok(Self(vec![]))
-        } else {
-            Err(ErrorInner::InvalidFormat)?
-        }
-    }
-
-    pub(in crate::i_calendar) fn into_string(self) -> String {
+    pub(in crate::i_calendar) fn to_escaped(&self) -> String {
         let mut s = String::new();
         s.push_str("CALSCALE");
         for p in &self.0 {
@@ -77,15 +66,9 @@ mod tests {
         fn assert_fn<T: Clone + Eq + PartialEq>() {}
         assert_fn::<CalendarScale>();
 
-        let s = "CALSCALE:GREGORIAN\r\n".to_owned();
-        assert_eq!(CalendarScale::from_string(s.clone())?.into_string(), s);
-
-        let s = "CALSCALE:GREGORIAN".to_owned();
-        assert!(CalendarScale::from_string(s).is_err());
-
         let s = "GREGORIAN";
         assert_eq!(
-            CalendarScale::new(Text::from_unescaped(s)?)?.into_string(),
+            CalendarScale::new(Text::from_unescaped(s)?)?.to_escaped(),
             "CALSCALE:GREGORIAN\r\n"
         );
 
@@ -97,7 +80,7 @@ mod tests {
                     vec![ParamValue::from_unescaped("param-value")?]
                 )?]
             )?
-            .into_string(),
+            .to_escaped(),
             "CALSCALE;IANA-TOKEN=param-value:GREGORIAN\r\n"
         );
 

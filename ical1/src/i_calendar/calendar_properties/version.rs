@@ -13,8 +13,6 @@ pub struct VersionError(#[from] ErrorInner);
 
 #[derive(Debug, thiserror::Error)]
 enum ErrorInner {
-    #[error("invalid format")]
-    InvalidFormat,
     #[error("text")]
     Text(#[from] TextError),
 }
