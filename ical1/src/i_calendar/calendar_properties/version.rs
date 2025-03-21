@@ -19,7 +19,6 @@ enum ErrorInner {
     Text(#[from] TextError),
 }
 
-/// verparam not supported
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Version(Text, Vec<OtherParam>);
 
