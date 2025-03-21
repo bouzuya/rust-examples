@@ -2,7 +2,10 @@
 //!
 //! <https://datatracker.ietf.org/doc/html/rfc5545#section-3.7.3>
 
-use crate::i_calendar::value_type::{Text, TextError};
+use crate::i_calendar::{
+    property_parameters::OtherParam,
+    value_type::{Text, TextError},
+};
 
 #[derive(Debug, thiserror::Error)]
 #[error("unique identifier")]
@@ -16,54 +19,69 @@ enum ErrorInner {
     Text(#[from] TextError),
 }
 
-/// pidparam not supported
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
-pub struct ProductIdentifier(Text);
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProductIdentifier(Text, Vec<OtherParam>);
 
 impl ProductIdentifier {
-    // TODO: what is value?
-    pub fn from_value(s: &str) -> Result<Self, ProductIdentifierError> {
-        Self::from_string(format!("PRODID:{}\r\n", s))
+    pub fn new(value: Text) -> Result<Self, ProductIdentifierError> {
+        Self::with_parameters(value, Vec::<OtherParam>::new())
     }
 
-    pub(in crate::i_calendar) fn from_string(s: String) -> Result<Self, ProductIdentifierError> {
-        if s.starts_with("PRODID:") && s.ends_with("\r\n") {
-            let text = s
-                .trim_start_matches("PRODID:")
-                .trim_end_matches("\r\n")
-                .to_owned();
-            Ok(Text::from_string(text)
-                .map(Self)
-                .map_err(ErrorInner::Text)?)
-        } else {
-            Err(ErrorInner::InvalidFormat)?
+    pub fn with_parameters<I>(value: Text, param: I) -> Result<Self, ProductIdentifierError>
+    where
+        I: IntoIterator,
+        I::Item: Into<OtherParam>,
+    {
+        Ok(Self(
+            value,
+            param
+                .into_iter()
+                .map(Into::into)
+                .collect::<Vec<OtherParam>>(),
+        ))
+    }
+
+    pub(in crate::i_calendar) fn to_escaped(&self) -> String {
+        let mut s = String::new();
+        s.push_str("PRODID");
+        for p in &self.1 {
+            s.push(';');
+            s.push_str(&p.to_escaped());
         }
-    }
-
-    pub(in crate::i_calendar) fn into_string(self) -> String {
-        format!("PRODID:{}\r\n", self.0.into_string())
+        s.push(':');
+        s.push_str(&self.0.to_string());
+        s.push_str("\r\n");
+        s
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::i_calendar::property_parameters::{ParamValue, XName, XParam};
+
     use super::*;
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        fn assert_fn<T: Clone + Eq + Ord + PartialEq + PartialOrd>() {}
+        fn assert_fn<T: Clone + Eq + PartialEq>() {}
         assert_fn::<ProductIdentifier>();
-
-        let s = "PRODID:-//ABC Corporation//NONSGML My Product//EN\r\n".to_owned();
-        assert_eq!(ProductIdentifier::from_string(s.clone())?.into_string(), s);
-
-        let s = "PRODID:-//ABC Corporation//NONSGML My Product//EN".to_owned();
-        assert!(ProductIdentifier::from_string(s.clone()).is_err());
 
         let s = "-//ABC Corporation//NONSGML My Product//EN";
         assert_eq!(
-            ProductIdentifier::from_value(s)?.into_string(),
+            ProductIdentifier::new(Text::from_unescaped(s)?)?.to_escaped(),
             "PRODID:-//ABC Corporation//NONSGML My Product//EN\r\n"
+        );
+
+        assert_eq!(
+            ProductIdentifier::with_parameters(
+                Text::from_unescaped("-//ABC Corporation//NONSGML My Product//EN")?,
+                vec![XParam::new(
+                    XName::from_unescaped("X-PARAM")?,
+                    vec![ParamValue::from_unescaped("value")?]
+                )?]
+            )?
+            .to_escaped(),
+            "PRODID;X-PARAM=value:-//ABC Corporation//NONSGML My Product//EN\r\n"
         );
 
         Ok(())
