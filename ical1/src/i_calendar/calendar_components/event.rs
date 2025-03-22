@@ -1,7 +1,9 @@
-use crate::i_calendar::component_properties::{
-    Categories, CategoriesError, Classification, ClassificationError, DateTimeEnd,
-    DateTimeEndError, DateTimeStamp, DateTimeStampError, DateTimeStart, DateTimeStartError,
-    Summary, SummaryError, UniqueIdentifier, UniqueIdentifierError,
+use crate::{
+    DateTimeCreated,
+    i_calendar::component_properties::{
+        Categories, Classification, DateTimeEnd, DateTimeStamp, DateTimeStart, Summary,
+        UniqueIdentifier,
+    },
 };
 
 #[derive(Debug, thiserror::Error)]
@@ -10,40 +12,22 @@ pub struct EventError(#[from] ErrorInner);
 
 #[derive(Debug, thiserror::Error)]
 enum ErrorInner {
-    #[error("build")]
-    Build(#[source] PrivateEventBuilderError),
-    #[error("categories")]
-    Categories(#[source] CategoriesError),
-    #[error("classification")]
-    Classification(#[source] ClassificationError),
-    #[error("date-time end")]
-    DateTimeEnd(#[source] DateTimeEndError),
-    #[error("date-time stamp")]
-    DateTimeStamp(#[source] DateTimeStampError),
     #[error("date-time stamp required")]
     DateTimeStampRequired,
-    #[error("date-time start")]
-    DateTimeStart(#[source] DateTimeStartError),
     #[error("date-time start required")]
     DateTimeStartRequired,
-    #[error("invalid format")]
-    InvalidFormat,
-    #[error("summary")]
-    Summary(#[source] SummaryError),
-    #[error("unique identifier")]
-    UniqueIdentifier(#[source] UniqueIdentifierError),
     #[error("unique identifier required")]
     UniqueIdentifierRequired,
 }
 
 /// <https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.1>
-#[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd, derive_builder::Builder)]
-#[builder(name = "PrivateEventBuilder")]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Event {
     dtstamp: DateTimeStamp,
     uid: UniqueIdentifier,
     dtstart: DateTimeStart,
     class: Option<Classification>,
+    created: Option<DateTimeCreated>,
     summary: Option<Summary>,
     dtend: Option<DateTimeEnd>,
     categories: Vec<Categories>,
@@ -66,66 +50,11 @@ impl Event {
                 .dtstart
                 .ok_or_else(|| ErrorInner::DateTimeStartRequired)?,
             class: builder.class,
+            created: builder.created,
             summary: builder.summary,
             dtend: builder.dtend,
             categories: builder.categories,
         })
-    }
-
-    pub(in crate::i_calendar) fn from_string(value: String) -> Result<Self, EventError> {
-        if value.starts_with("BEGIN:VEVENT\r\n") && value.ends_with("END:VEVENT\r\n") {
-            let mut lines = value
-                .trim_start_matches("BEGIN:VEVENT\r\n")
-                .trim_end_matches("END:VEVENT\r\n")
-                .split("\r\n")
-                .collect::<Vec<&str>>();
-            lines.pop();
-            let mut builder = PrivateEventBuilder::default();
-            for line in lines {
-                if line.starts_with("UID:") {
-                    let uid = UniqueIdentifier::from_string(format!("{}\r\n", line))
-                        .map_err(ErrorInner::UniqueIdentifier)?;
-                    builder.uid(uid);
-                } else if line.starts_with("DTSTAMP:") {
-                    let dtstamp = DateTimeStamp::from_string(format!("{}\r\n", line))
-                        .map_err(ErrorInner::DateTimeStamp)?;
-                    builder.dtstamp(dtstamp);
-                } else if line.starts_with("DTSTART:") {
-                    let dtstart = DateTimeStart::from_string(format!("{}\r\n", line))
-                        .map_err(ErrorInner::DateTimeStart)?;
-                    builder.dtstart(dtstart);
-                } else if line.starts_with("DTEND:") {
-                    let dtend = DateTimeEnd::from_string(format!("{}\r\n", line))
-                        .map_err(ErrorInner::DateTimeEnd)?;
-                    builder.dtend(Some(dtend));
-                } else if line.starts_with("SUMMARY:") {
-                    let summary = Summary::from_string(format!("{}\r\n", line))
-                        .map_err(ErrorInner::Summary)?;
-                    builder.summary(Some(summary));
-                } else if line.starts_with("CLASS:") {
-                    let class = Classification::from_string(format!("{}\r\n", line))
-                        .map_err(ErrorInner::Classification)?;
-                    builder.class(Some(class));
-                } else if line.starts_with("CATEGORIES:") {
-                    let categories = Categories::from_string(format!("{}\r\n", line))
-                        .map_err(ErrorInner::Categories)?;
-                    builder.categories(
-                        builder
-                            .categories
-                            .clone()
-                            .unwrap_or_default()
-                            .into_iter()
-                            .chain(std::iter::once(categories))
-                            .collect::<Vec<Categories>>(),
-                    );
-                } else {
-                    Err(ErrorInner::InvalidFormat)?
-                }
-            }
-            Ok(builder.build().map_err(ErrorInner::Build)?)
-        } else {
-            Err(ErrorInner::InvalidFormat)?
-        }
     }
 
     pub(in crate::i_calendar) fn into_string(self) -> String {
@@ -143,6 +72,9 @@ impl Event {
         if let Some(class) = self.class {
             lines.push(class.into_string());
         }
+        if let Some(created) = self.created {
+            lines.push(created.to_escaped());
+        }
         for categories in self.categories {
             lines.push(categories.into_string());
         }
@@ -156,6 +88,7 @@ pub struct EventBuilder {
     uid: Option<UniqueIdentifier>,
     dtstart: Option<DateTimeStart>,
     class: Option<Classification>,
+    created: Option<DateTimeCreated>,
     summary: Option<Summary>,
     dtend: Option<DateTimeEnd>,
     categories: Vec<Categories>,
@@ -168,6 +101,7 @@ impl EventBuilder {
             uid: None,
             dtstart: None,
             class: None,
+            created: None,
             summary: None,
             dtend: None,
             categories: Vec::new(),
@@ -185,6 +119,11 @@ impl EventBuilder {
 
     pub fn class(mut self, class: Classification) -> Self {
         self.class = Some(class);
+        self
+    }
+
+    pub fn created(mut self, created: DateTimeCreated) -> Self {
+        self.created = Some(created);
         self
     }
 
@@ -220,22 +159,35 @@ mod tests {
 
     #[test]
     fn test() -> anyhow::Result<()> {
-        fn assert_fn<T: Clone + Eq + Ord + PartialEq + PartialOrd>() {}
+        fn assert_fn<T: Clone + Eq + PartialEq>() {}
         assert_fn::<Event>();
 
-        let s = [
-            "BEGIN:VEVENT\r\n",
-            "UID:19970901T130000Z-123401@example.com\r\n",
-            "DTSTAMP:19970901T130000Z\r\n",
-            "DTSTART:19970903T163000Z\r\n",
-            "DTEND:19970903T190000Z\r\n",
-            "SUMMARY:Annual Employee Review\r\n",
-            "CLASS:PRIVATE\r\n",
-            "CATEGORIES:BUSINESS,HUMAN RESOURCES\r\n",
-            "END:VEVENT\r\n",
-        ]
-        .join("");
-        assert_eq!(Event::from_string(s.clone())?.into_string(), s);
+        assert_eq!(
+            Event::builder()
+                .uid(UniqueIdentifier::from_value(
+                    "19970901T130000Z-123401@example.com"
+                )?)
+                .dtstamp(DateTimeStamp::from_value("19970901T130000Z")?)
+                .dtstart(DateTimeStart::from_value("19970903T163000Z")?)
+                .dtend(DateTimeEnd::from_value("19970903T190000Z")?)
+                .summary(Summary::from_value("Annual Employee Review")?)
+                .class(Classification::from_value("PRIVATE")?)
+                .add_categories(Categories::from_value("BUSINESS,HUMAN RESOURCES")?)
+                .build()?
+                .into_string(),
+            [
+                "BEGIN:VEVENT\r\n",
+                "UID:19970901T130000Z-123401@example.com\r\n",
+                "DTSTAMP:19970901T130000Z\r\n",
+                "DTSTART:19970903T163000Z\r\n",
+                "DTEND:19970903T190000Z\r\n",
+                "SUMMARY:Annual Employee Review\r\n",
+                "CLASS:PRIVATE\r\n",
+                "CATEGORIES:BUSINESS,HUMAN RESOURCES\r\n",
+                "END:VEVENT\r\n",
+            ]
+            .join("")
+        );
 
         Ok(())
     }
