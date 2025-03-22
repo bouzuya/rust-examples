@@ -12,8 +12,6 @@ pub struct DescriptionError(#[from] ErrorInner);
 enum ErrorInner {
     #[error("date-time")]
     DateTime(#[from] DateTimeError),
-    #[error("UTC time format required")]
-    UtcTimeFormatRequired,
 }
 
 /// altrepparam, languageparam, other-param is not implemented
