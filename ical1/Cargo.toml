@@ -7,6 +7,7 @@ publish = false
 derive_builder = "0.20.2"
 ical = { version = "0.11.0", features = ["generator"] }
 thiserror = "2.0.12"
+url = "2.5.4"
 
 [dev-dependencies]
 anyhow = "1.0.97"
