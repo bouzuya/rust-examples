@@ -3,8 +3,11 @@
 
 mod date_time;
 mod text;
+mod uri;
 
 pub use self::date_time::DateTime;
 pub use self::date_time::DateTimeError;
 pub use self::text::Text;
 pub use self::text::TextError;
+pub use self::uri::Uri;
+pub use self::uri::UriError;
