@@ -1,3 +1,4 @@
+mod alternate_text_representation;
 mod iana_param;
 mod iana_token;
 mod other_param;

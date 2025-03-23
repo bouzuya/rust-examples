@@ -2,7 +2,7 @@
 //!
 //! <https://datatracker.ietf.org/doc/html/rfc5545#section-3.3.13>
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Uri(url::Url);
 
 #[derive(Debug, thiserror::Error)]
