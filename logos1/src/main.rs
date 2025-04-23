@@ -111,4 +111,27 @@ mod tests {
 
         assert_eq!(lexer.next(), None);
     }
+
+    #[derive(Debug, PartialEq, logos::Logos)]
+    enum Token3 {
+        #[regex("[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}", |lexer| {
+            let slice = lexer.slice();
+            let year = slice[0..4].parse::<u16>().expect("year");
+            let month = slice[5..7].parse::<u8>().expect("month");
+            let day_of_month = slice[8..10].parse::<u8>().expect("day_of_month");
+            (year, month, day_of_month)
+        })]
+        Date((u16, u8, u8)),
+    }
+
+    #[test]
+    fn test_token3() {
+        let mut lexer = <Token3 as logos::Logos>::lexer("2020-01-02");
+
+        assert_eq!(lexer.next(), Some(Ok(Token3::Date((2020_u16, 1_u8, 2_u8)))));
+        assert_eq!(lexer.span(), 0..10);
+        assert_eq!(lexer.slice(), "2020-01-02");
+
+        assert_eq!(lexer.next(), None);
+    }
 }
