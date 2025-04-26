@@ -186,71 +186,71 @@ mod tests {
         assert_eq!(lexer.next(), None);
     }
 
+    // unary = false | true | integer
+    // binary = unary | unary plus binary
+    // ternary = binary | binary question ternary colon ternary
+
+    #[derive(Debug, PartialEq)]
+    enum Term {
+        False,
+        True,
+        Integer(u8),
+        Add(Box<Term>, Box<Term>),
+        If(Box<Term>, Box<Term>, Box<Term>),
+    }
+
+    fn read_binary(iter: &mut std::iter::Peekable<logos::Lexer<'_, Token4>>) -> Term {
+        let token = iter.next().unwrap().unwrap();
+        let unary = match token {
+            Token4::False => Term::False,
+            Token4::True => Term::True,
+            Token4::Integer(i) => Term::Integer(i),
+            Token4::Plus | Token4::Question | Token4::Colon => unreachable!(),
+        };
+        match iter.peek() {
+            None => unary,
+            Some(token) => {
+                let token = token.as_ref().unwrap();
+                match token {
+                    Token4::False | Token4::True | Token4::Integer(_) => unreachable!(),
+                    Token4::Question | Token4::Colon => unary,
+                    Token4::Plus => {
+                        assert!(matches!(iter.next(), Some(Ok(Token4::Plus))));
+                        let left = unary;
+                        let right = read_binary(iter);
+                        Term::Add(Box::new(left), Box::new(right))
+                    }
+                }
+            }
+        }
+    }
+
+    fn read_ternary(iter: &mut std::iter::Peekable<logos::Lexer<'_, Token4>>) -> Term {
+        let binary = read_binary(iter);
+        match iter.peek() {
+            None => binary,
+            Some(token) => {
+                let token = token.as_ref().unwrap();
+                match token {
+                    Token4::False | Token4::True | Token4::Integer(_) | Token4::Plus => {
+                        unreachable!()
+                    }
+                    Token4::Question => {
+                        assert!(matches!(iter.next(), Some(Ok(Token4::Question))));
+                        let cond = binary;
+                        let thn = read_ternary(iter);
+                        assert!(matches!(iter.next(), Some(Ok(Token4::Colon))));
+                        let els = read_ternary(iter);
+                        Term::If(Box::new(cond), Box::new(thn), Box::new(els))
+                    }
+                    Token4::Colon => binary,
+                }
+            }
+        }
+    }
+
     #[test]
     fn test_token4_with_expr() {
-        // unary = false | true | integer
-        // binary = unary | unary plus binary
-        // ternary = binary | binary question ternary colon ternary
-
-        #[derive(Debug, PartialEq)]
-        enum Term {
-            False,
-            True,
-            Integer(u8),
-            Add(Box<Term>, Box<Term>),
-            If(Box<Term>, Box<Term>, Box<Term>),
-        }
-
-        fn read_binary(iter: &mut std::iter::Peekable<logos::Lexer<'_, Token4>>) -> Term {
-            let token = iter.next().unwrap().unwrap();
-            let unary = match token {
-                Token4::False => Term::False,
-                Token4::True => Term::True,
-                Token4::Integer(i) => Term::Integer(i),
-                Token4::Plus | Token4::Question | Token4::Colon => unreachable!(),
-            };
-            match iter.peek() {
-                None => unary,
-                Some(token) => {
-                    let token = token.as_ref().unwrap();
-                    match token {
-                        Token4::False | Token4::True | Token4::Integer(_) => unreachable!(),
-                        Token4::Question | Token4::Colon => unary,
-                        Token4::Plus => {
-                            assert!(matches!(iter.next(), Some(Ok(Token4::Plus))));
-                            let left = unary;
-                            let right = read_binary(iter);
-                            Term::Add(Box::new(left), Box::new(right))
-                        }
-                    }
-                }
-            }
-        }
-
-        fn read_ternary(iter: &mut std::iter::Peekable<logos::Lexer<'_, Token4>>) -> Term {
-            let binary = read_binary(iter);
-            match iter.peek() {
-                None => binary,
-                Some(token) => {
-                    let token = token.as_ref().unwrap();
-                    match token {
-                        Token4::False | Token4::True | Token4::Integer(_) | Token4::Plus => {
-                            unreachable!()
-                        }
-                        Token4::Question => {
-                            assert!(matches!(iter.next(), Some(Ok(Token4::Question))));
-                            let cond = binary;
-                            let thn = read_ternary(iter);
-                            assert!(matches!(iter.next(), Some(Ok(Token4::Colon))));
-                            let els = read_ternary(iter);
-                            Term::If(Box::new(cond), Box::new(thn), Box::new(els))
-                        }
-                        Token4::Colon => binary,
-                    }
-                }
-            }
-        }
-
         fn test_parse(s: &str, expected: Term) {
             let lexer = <Token4 as logos::Logos>::lexer(s);
             let term = read_ternary(&mut lexer.peekable());
@@ -306,5 +306,52 @@ mod tests {
                 )),
             ),
         );
+    }
+
+    #[test]
+    fn test_typecheck() {
+        #[derive(Debug, PartialEq)]
+        enum Type {
+            Boolean,
+            Integer,
+        }
+
+        fn typecheck(t: Term) -> Type {
+            match t {
+                Term::False | Term::True => Type::Boolean,
+                Term::Integer(_) => Type::Integer,
+                Term::Add(left, right) => {
+                    assert_eq!(typecheck(*left), Type::Integer, "integer expected");
+                    assert_eq!(typecheck(*right), Type::Integer, "integer expected");
+                    Type::Integer
+                }
+                Term::If(cond, thn, els) => {
+                    assert_eq!(typecheck(*cond), Type::Boolean, "boolean expected");
+                    let thn_type = typecheck(*thn);
+                    assert_eq!(
+                        thn_type,
+                        typecheck(*els),
+                        "then and else have different types"
+                    );
+                    thn_type
+                }
+            }
+        }
+
+        let lexer = <Token4 as logos::Logos>::lexer("false");
+        let term = read_ternary(&mut lexer.peekable());
+        assert_eq!(typecheck(term), Type::Boolean);
+
+        let lexer = <Token4 as logos::Logos>::lexer("true");
+        let term = read_ternary(&mut lexer.peekable());
+        assert_eq!(typecheck(term), Type::Boolean);
+
+        let lexer = <Token4 as logos::Logos>::lexer("0");
+        let term = read_ternary(&mut lexer.peekable());
+        assert_eq!(typecheck(term), Type::Integer);
+
+        let lexer = <Token4 as logos::Logos>::lexer("true ? 0 : 1 + 2");
+        let term = read_ternary(&mut lexer.peekable());
+        assert_eq!(typecheck(term), Type::Integer);
     }
 }
