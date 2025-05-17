@@ -1,0 +1,14 @@
+[package]
+name = "gcloud-auth1"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+firestore-path = "1.0.6"
+gcloud-auth = { version = "1.1.0", default-features = false, features = ["rustls-tls"] }
+googleapis-tonic-google-firestore-v1 = "0.20.0"
+thiserror = "2.0.12"
+token-source = "1.0.0"
+tokio = { version = "1.45.0", features = ["full"] }
+tonic = { version = "0.13.1", default-features = false, features = ["tls-webpki-roots"] }
