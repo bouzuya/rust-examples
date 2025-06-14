@@ -1,5 +1,7 @@
 mod model;
 
 fn main() {
-    println!("Hello, world!");
+    let created = model::Aggregate1::new();
+    let updated = created.update();
+    println!("{}", updated.state());
 }
