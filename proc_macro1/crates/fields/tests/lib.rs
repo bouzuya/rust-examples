@@ -1,7 +1,8 @@
 #[test]
 fn test1() {
     fields::fields!(field1 = i32);
-    let _ = Struct1 { field1: 42 };
+    let s = Struct1 { field1: 42 };
+    assert_eq!(s.field1, 42);
 }
 
 #[test]
