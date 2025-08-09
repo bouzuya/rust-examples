@@ -1,0 +1,5 @@
+error: expected string literal
+ --> tests/ui/compile_fail.rs:2:35
+  |
+2 |     function_like::function_like!(123);
+  |                                   ^^^

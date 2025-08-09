@@ -1,0 +1,5 @@
+error: expected one of: `for`, parentheses, `fn`, `unsafe`, `extern`, identifier, `::`, `<`, `dyn`, square brackets, `*`, `&`, `!`, `impl`, `_`, lifetime
+ --> tests/ui/compile_fail.rs:2:30
+  |
+2 |     fields::fields!(field1 = "abc");
+  |                              ^^^^^
