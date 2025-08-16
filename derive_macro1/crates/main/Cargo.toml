@@ -1,0 +1,10 @@
+[package]
+name = "main"
+edition = "2024"
+publish = false
+
+[dependencies]
+derive1 = { path = "../derive1" }
+
+[lints.rust]
+dead_code = "allow"
