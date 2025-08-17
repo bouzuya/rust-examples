@@ -1,8 +1,11 @@
 #[derive(derive1::VariantsFn)]
 enum E1 {
+    #[rename = "X"]
     A,
     B(i32),
-    C { b: bool },
+    C {
+        b: bool,
+    },
 }
 
 #[derive(derive1::VariantsFn)]
