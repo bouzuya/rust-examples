@@ -1,0 +1,16 @@
+error[E0277]: `NonDebug` doesn't implement `Debug`
+ --> tests/ui/compile_fail_non_debug_field.rs:5:5
+  |
+3 | #[derive(Debug)]
+  |          ----- in this derive macro expansion
+4 | struct MyDebug {
+5 |     field: NonDebug,
+  |     ^^^^^^^^^^^^^^^ `NonDebug` cannot be formatted using `{:?}`
+  |
+  = help: the trait `Debug` is not implemented for `NonDebug`
+  = note: add `#[derive(Debug)]` to `NonDebug` or manually `impl Debug for NonDebug`
+help: consider annotating `NonDebug` with `#[derive(Debug)]`
+  |
+1 + #[derive(Debug)]
+2 | struct NonDebug;
+  |
