@@ -84,7 +84,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "axum4"
+name = "axum5"
 version = "0.0.0"
 dependencies = [
  "anyhow",
