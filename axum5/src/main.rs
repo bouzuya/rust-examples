@@ -20,7 +20,11 @@ async fn create_user(
 }
 
 async fn fallback_handler() -> impl axum::response::IntoResponse {
-    axum::http::StatusCode::NO_CONTENT
+    (axum::http::StatusCode::OK, "fallback")
+}
+
+async fn method_not_allowed_fallback() -> impl axum::response::IntoResponse {
+    (axum::http::StatusCode::OK, "method_not_allowed_fallback")
 }
 
 fn router() -> axum::Router<()> {
@@ -29,6 +33,7 @@ fn router() -> axum::Router<()> {
         .route("/users", axum::routing::post(create_user))
         .route("/users/{user_id}", axum::routing::get(get_user))
         .fallback(fallback_handler)
+        .method_not_allowed_fallback(method_not_allowed_fallback)
 }
 
 #[tokio::main]
@@ -95,7 +100,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_unknown() -> anyhow::Result<()> {
+    async fn test_path_not_found() -> anyhow::Result<()> {
         let router = router();
         let request = axum::http::Request::builder()
             .method(axum::http::Method::GET)
@@ -104,8 +109,31 @@ mod tests {
         let response = send_request(router, request).await?;
         // no fallback => HTTP 404
         // assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
-        assert_eq!(response.status(), axum::http::StatusCode::NO_CONTENT);
-        assert_eq!(response.into_body_string().await?, "");
+        // assert_eq!(response.into_body_string().await?, "");
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        assert_eq!(response.into_body_string().await?, "fallback");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_method_not_allowed() -> anyhow::Result<()> {
+        let router = router();
+        let request = axum::http::Request::builder()
+            .method(axum::http::Method::POST)
+            .uri("/")
+            .body(axum::body::Body::empty())?;
+        let response = send_request(router, request).await?;
+        // no fallback => HTTP 405
+        // assert_eq!(
+        //     response.status(),
+        //     axum::http::StatusCode::METHOD_NOT_ALLOWED
+        // );
+        // assert_eq!(response.into_body_string().await?, "");
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        assert_eq!(
+            response.into_body_string().await?,
+            "method_not_allowed_fallback"
+        );
         Ok(())
     }
 
