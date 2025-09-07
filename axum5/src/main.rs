@@ -137,6 +137,22 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test]
+    async fn test_other_default_fallback() -> anyhow::Result<()> {
+        let router = router();
+        let request = axum::http::Request::builder()
+            .method(axum::http::Method::POST)
+            .uri("/unknown")
+            .body(axum::body::Body::empty())?;
+        let response = send_request(router, request).await?;
+        // no fallback => HTTP 404
+        // assert_eq!(response.status(), axum::http::StatusCode::NOT_FOUND);
+        // assert_eq!(response.into_body_string().await?, "");
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        assert_eq!(response.into_body_string().await?, "fallback");
+        Ok(())
+    }
+
     async fn send_request(
         router: axum::Router<()>,
         request: axum::http::Request<axum::body::Body>,
