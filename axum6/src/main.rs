@@ -24,6 +24,7 @@ fn private_router() -> axum::Router<()> {
         .merge(private_a())
         .merge(private_b())
         .merge(private_c())
+        .merge(private_d())
 }
 
 struct ExtractorA;
@@ -94,6 +95,64 @@ fn private_c() -> axum::Router<()> {
 
 async fn private_c_handler(ExtractorB: ExtractorB) -> impl axum::response::IntoResponse {
     "/private/c"
+}
+
+trait Validator {
+    fn validate(&self, token: &str) -> bool;
+}
+
+struct ExtractorC;
+
+impl<S> axum::extract::FromRequestParts<S> for ExtractorC
+where
+    S: Validator + Send + Sync,
+{
+    type Rejection = axum::http::StatusCode;
+
+    fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        state: &S,
+    ) -> impl Future<Output = Result<Self, Self::Rejection>> + Send {
+        async {
+            match parts.headers.get(axum::http::header::AUTHORIZATION) {
+                Some(header_value) => match header_value.as_bytes().strip_prefix(b"Bearer ") {
+                    None => Err(axum::http::StatusCode::FORBIDDEN),
+                    Some(token) => {
+                        let s = String::from_utf8(token.to_vec())
+                            .map_err(|_| axum::http::StatusCode::FORBIDDEN)?;
+                        if state.validate(&s) {
+                            Ok(ExtractorC)
+                        } else {
+                            Err(axum::http::StatusCode::FORBIDDEN)
+                        }
+                    }
+                },
+                None => Err(axum::http::StatusCode::UNAUTHORIZED),
+            }
+        }
+    }
+}
+
+fn private_d() -> axum::Router<()> {
+    axum::Router::new()
+        .route(
+            "/private/d",
+            axum::routing::get(private_d_handler::<StateD>),
+        )
+        .with_state(StateD)
+}
+
+async fn private_d_handler<S>(ExtractorC: ExtractorC) -> impl axum::response::IntoResponse {
+    "/private/d"
+}
+
+#[derive(Clone)]
+struct StateD;
+
+impl Validator for StateD {
+    fn validate(&self, token: &str) -> bool {
+        token == "d"
+    }
 }
 
 fn router() -> axum::Router<()> {
@@ -259,6 +318,42 @@ mod tests {
         let response = send_request(app, request).await?;
         assert_eq!(response.status(), axum::http::StatusCode::OK);
         assert_eq!(response.into_body_string().await?, "/private/c");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_private_d() -> anyhow::Result<()> {
+        let app = router();
+        let request = axum::http::Request::builder()
+            .method(axum::http::Method::GET)
+            // no token
+            .uri("/private/d")
+            .body(axum::body::Body::empty())?;
+        let response = send_request(app, request).await?;
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
+        assert_eq!(response.into_body_string().await?, "");
+
+        let app = router();
+        let request = axum::http::Request::builder()
+            .method(axum::http::Method::GET)
+            .uri("/private/d")
+            // invalid token
+            .header(axum::http::header::AUTHORIZATION, "Bearer c")
+            .body(axum::body::Body::empty())?;
+        let response = send_request(app, request).await?;
+        assert_eq!(response.status(), axum::http::StatusCode::FORBIDDEN);
+        assert_eq!(response.into_body_string().await?, "");
+
+        let app = router();
+        let request = axum::http::Request::builder()
+            .method(axum::http::Method::GET)
+            .uri("/private/d")
+            // valid token
+            .header(axum::http::header::AUTHORIZATION, "Bearer d")
+            .body(axum::body::Body::empty())?;
+        let response = send_request(app, request).await?;
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        assert_eq!(response.into_body_string().await?, "/private/d");
         Ok(())
     }
 
