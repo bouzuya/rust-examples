@@ -25,6 +25,7 @@ fn private_router() -> axum::Router<()> {
         .merge(private_b())
         .merge(private_c())
         .merge(private_d())
+        .merge(private_e())
 }
 
 struct ExtractorA;
@@ -154,6 +155,36 @@ impl Validator for StateD {
         token == "d"
     }
 }
+
+fn private_e() -> axum::Router<()> {
+    axum::Router::new()
+        .nest(
+            "/private/e",
+            axum::Router::new()
+                .route("/1", axum::routing::get(private_e_1_handler))
+                .route("/2", axum::routing::get(private_e_2_handler))
+                .route_layer(axum::middleware::from_extractor::<ExtractorB>()),
+        )
+        .route(
+            "/private/e/3",
+            axum::routing::get(|| async { "/private/e/3" }),
+        )
+}
+
+async fn private_e_1_handler() -> impl axum::response::IntoResponse {
+    "/private/e/1"
+}
+
+async fn private_e_2_handler() -> impl axum::response::IntoResponse {
+    "/private/e/2"
+}
+
+// async fn private_e_layer(
+//     req: axum::http::Request<axum::body::Body>,
+//     next: axum::middleware::Next,
+// ) -> impl axum::response::IntoResponse {
+//     next.run(req).await
+// }
 
 fn router() -> axum::Router<()> {
     axum::Router::new()
@@ -354,6 +385,57 @@ mod tests {
         let response = send_request(app, request).await?;
         assert_eq!(response.status(), axum::http::StatusCode::OK);
         assert_eq!(response.into_body_string().await?, "/private/d");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_private_e() -> anyhow::Result<()> {
+        let app = router();
+        let request = axum::http::Request::builder()
+            .method(axum::http::Method::GET)
+            .uri("/private/e/1")
+            .body(axum::body::Body::empty())?;
+        let response = send_request(app, request).await?;
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
+        assert_eq!(response.into_body_string().await?, "");
+
+        let app = router();
+        let request = axum::http::Request::builder()
+            .method(axum::http::Method::GET)
+            .uri("/private/e/1")
+            .header(axum::http::header::AUTHORIZATION, "Bearer b")
+            .body(axum::body::Body::empty())?;
+        let response = send_request(app, request).await?;
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        assert_eq!(response.into_body_string().await?, "/private/e/1");
+
+        let app = router();
+        let request = axum::http::Request::builder()
+            .method(axum::http::Method::GET)
+            .uri("/private/e/2")
+            .body(axum::body::Body::empty())?;
+        let response = send_request(app, request).await?;
+        assert_eq!(response.status(), axum::http::StatusCode::UNAUTHORIZED);
+        assert_eq!(response.into_body_string().await?, "");
+
+        let app = router();
+        let request = axum::http::Request::builder()
+            .method(axum::http::Method::GET)
+            .uri("/private/e/2")
+            .header(axum::http::header::AUTHORIZATION, "Bearer b")
+            .body(axum::body::Body::empty())?;
+        let response = send_request(app, request).await?;
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        assert_eq!(response.into_body_string().await?, "/private/e/2");
+
+        let app = router();
+        let request = axum::http::Request::builder()
+            .method(axum::http::Method::GET)
+            .uri("/private/e/3")
+            .body(axum::body::Body::empty())?;
+        let response = send_request(app, request).await?;
+        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        assert_eq!(response.into_body_string().await?, "/private/e/3");
         Ok(())
     }
 
