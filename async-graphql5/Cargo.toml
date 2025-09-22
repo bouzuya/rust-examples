@@ -1,0 +1,15 @@
+[package]
+name = "async-graphql5"
+edition = "2024"
+publish = false
+
+[dependencies]
+anyhow = "1.0.99"
+async-graphql = "7.0.17"
+async-graphql-value = "7.0.17"
+async-trait = "0.1.89"
+serde_json = "1.0.143"
+tokio = { version = "1.47.1", features = ["full"] }
+
+[lints.rust]
+dead_code = "allow"
