@@ -1,0 +1,6 @@
+[package]
+name = "macro_rules1"
+edition = "2024"
+publish = false
+
+[dependencies]
