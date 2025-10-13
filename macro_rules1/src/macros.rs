@@ -27,3 +27,27 @@ macro_rules! my_macro {
 }
 
 pub use my_macro;
+
+#[macro_export]
+macro_rules! my_macro2 {
+    (
+        pub enum $name:ident {
+            $($variant:ident($inner:ty)),* $(,)?
+        }
+    ) => {
+
+        pub enum $name {
+            $($variant($inner)),*
+        }
+
+        impl $crate::MyErrorTrait for $name {
+            fn into_public_error(self) -> $crate::PublicError {
+                match self {
+                    $(Self::$variant(e) => e.into_public_error(),)*
+                }
+            }
+        }
+    };
+}
+
+pub use my_macro2;
