@@ -51,3 +51,8 @@ macro_rules! my_macro2 {
 }
 
 pub use my_macro2;
+
+#[macro_export]
+macro_rules! my_macro3(("a") => { "b" });
+
+pub use my_macro3;

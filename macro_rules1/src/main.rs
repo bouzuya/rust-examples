@@ -36,4 +36,8 @@ fn main() {
         MyError::Error2(self::error2::Error2).into_public_error(),
         PublicError("error2".to_owned())
     );
+
+    assert_eq!(macros::my_macro3!("a"), "b");
+    assert_eq!(macros::my_macro3! { "a" }, "b");
+    assert_eq!(macros::my_macro3!["a"], "b");
 }
