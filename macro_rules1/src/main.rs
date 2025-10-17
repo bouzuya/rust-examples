@@ -40,4 +40,6 @@ fn main() {
     assert_eq!(macros::my_macro3!("a"), "b");
     assert_eq!(macros::my_macro3! { "a" }, "b");
     assert_eq!(macros::my_macro3!["a"], "b");
+    assert_eq!(macros::my_macro4!("a"), "b");
+    assert_eq!(macros::my_macro5!("a"), "b");
 }

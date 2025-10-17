@@ -56,3 +56,13 @@ pub use my_macro2;
 macro_rules! my_macro3(("a") => { "b" });
 
 pub use my_macro3;
+
+#[macro_export]
+macro_rules! my_macro4(["a"] => [ "b" ]);
+
+pub use my_macro4;
+
+#[macro_export]
+macro_rules! my_macro5({"a"} => [ "b" ]);
+
+pub use my_macro5;
