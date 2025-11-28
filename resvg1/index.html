@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>resvg1</title>
+    <style>
+        ul {
+            display: block;
+            list-style: none;
+            padding: 0;
+            position: relative;
+        }
+
+        li {
+            display: block;
+            left: 0;
+            position: absolute;
+            top: 0;
+
+            &.left {
+                border-right: 1px solid black;
+                overflow: hidden;
+                z-index: 1;
+            }
+
+            &.right {
+                z-index: 0;
+            }
+        }
+
+        .container {
+            width: 640px;
+
+            &>input[type='range'] {
+                width: 100%;
+            }
+
+            &>ul {
+                width: 100%;
+
+                &>li {
+                    width: 100%;
+
+                    &>img {
+                        width: 640px;
+                        max-width: none;
+                        height: auto;
+                    }
+                }
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+    <h1>resvg1</h1>
+    <div class="container">
+        <input type="range" />
+        <ul>
+            <li class="left"><img src="v3-bouzuya-200x200.png" /></li>
+            <li class="right"><img src="v5-bouzuya-200x200.png" /></li>
+        </ul>
+    </div>
+    <script>
+        function main() {
+            const range = document.querySelector("input[type='range']");
+            const ul = document.querySelector("ul");
+            const liLeft = ul.querySelector("li.left");
+            range.addEventListener("input", (e) => {
+                const v = e.target.value;
+                liLeft.style.width = `${v}%`;
+            });
+
+        }
+        main();
+    </script>
+</body>
+
+</html>
