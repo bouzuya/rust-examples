@@ -66,7 +66,10 @@ fn ex3() {
         );
         encoder.set_color(png::ColorType::Rgba);
         encoder.set_depth(png::BitDepth::Eight);
-        let mut writer = encoder.write_header().unwrap();
-        writer.write_image_data(pixmap.data()).unwrap();
+        encoder
+            .write_header()
+            .unwrap()
+            .write_image_data(pixmap.data())
+            .unwrap();
     }
 }
