@@ -1,0 +1,7 @@
+[package]
+name = "main"
+edition = "2024"
+publish = false
+
+[dependencies]
+non_exhaustive1 = { path = "../non_exhaustive1" }

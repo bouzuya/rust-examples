@@ -1,0 +1,6 @@
+[package]
+name = "non_exhaustive1"
+edition = "2024"
+publish = false
+
+[dependencies]
