@@ -1,4 +1,4 @@
-fn main() {
+fn ex1() {
     let syntax_set = syntect::parsing::SyntaxSet::load_defaults_newlines();
 
     let mut names = syntax_set
@@ -72,4 +72,26 @@ fn main() {
     )
     .unwrap();
     assert_ne!(css, "");
+}
+
+fn ex2() {
+    let syntax_dir = std::path::PathBuf::from("syntaxes");
+    let syntax_dir = syntax_dir.canonicalize().unwrap();
+    // println!("syntax_dir: {:?}", syntax_dir.display());
+    let mut syntax_set_builder = syntect::parsing::SyntaxSetBuilder::new();
+    syntax_set_builder.add_plain_text_syntax();
+    syntax_set_builder
+        .add_from_folder(&syntax_dir, true)
+        .unwrap();
+    let syntax_set = syntax_set_builder.build();
+    assert_eq!(syntax_set.syntaxes().len(), 52);
+
+    assert!(syntax_set.find_syntax_by_token("TypeScript").is_some());
+    assert!(syntax_set.find_syntax_by_token("typescript").is_some());
+    assert!(syntax_set.find_syntax_by_token("ts").is_some());
+}
+
+fn main() {
+    ex1();
+    ex2();
 }

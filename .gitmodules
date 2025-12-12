@@ -1,0 +1,4 @@
+
+[submodule "syntect1/bat"]
+	path = syntect1/bat
+	url = https://github.com/sharkdp/bat
